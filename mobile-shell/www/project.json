@@ -1,0 +1,470 @@
+{
+  "schemaVersion": 1,
+  "id": "proj_bx75upir",
+  "name": "拓展·真机舱",
+  "screens": [
+    {
+      "id": "screen_1swpwnra",
+      "name": "Screen1",
+      "props": {
+        "Title": "真机舱",
+        "BackgroundColor": "#efebe9"
+      },
+      "root": {
+        "id": "verticalarrangement_xrqo5ged",
+        "type": "VerticalArrangement",
+        "name": "ScreenRoot",
+        "props": {
+          "Width": "填满父组件",
+          "Height": "填满父组件",
+          "BackgroundColor": "transparent"
+        },
+        "children": [
+          {
+            "id": "label_tlsvm0bx",
+            "type": "Label",
+            "name": "Tip_t_n1k42v17",
+            "props": {
+              "Text": "【指导】已装配全部传感器。电脑先看电量/网络；摇一摇、计步、陀螺仪、光线、接近、磁场、定位请装 APK 真机测。",
+              "TextColor": "#5a726c",
+              "FontSize": 12,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "ledlabel_tzh183ln",
+            "type": "LEDLabel",
+            "name": "LEDLabel1",
+            "props": {
+              "Text": "TIME",
+              "TextColor": "#69f0ae",
+              "BackgroundColor": "#102027",
+              "FontSize": 20,
+              "Width": "填满父组件"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_6cm37cor",
+            "type": "Label",
+            "name": "BatLabel",
+            "props": {
+              "Text": "电量：…",
+              "TextColor": "#202124",
+              "FontSize": 14,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_9f0zwuiz",
+            "type": "Label",
+            "name": "NetLabel",
+            "props": {
+              "Text": "网络：…",
+              "TextColor": "#202124",
+              "FontSize": 14,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_h8qcyi8t",
+            "type": "Label",
+            "name": "ShakeLabel",
+            "props": {
+              "Text": "摇一摇：等待中",
+              "TextColor": "#bf360c",
+              "FontSize": 14,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_dfafpvzx",
+            "type": "Label",
+            "name": "StepLabel",
+            "props": {
+              "Text": "步数 0",
+              "TextColor": "#202124",
+              "FontSize": 14,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_47jrkf8g",
+            "type": "Label",
+            "name": "AccelLabel",
+            "props": {
+              "Text": "X加速度 …",
+              "TextColor": "#5d4037",
+              "FontSize": 13,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "label_n7jsbshw",
+            "type": "Label",
+            "name": "CompassLabel",
+            "props": {
+              "Text": "指南针 …",
+              "TextColor": "#5d4037",
+              "FontSize": 13,
+              "Width": "填满父组件",
+              "Height": "自动"
+            },
+            "children": [],
+            "visible": true
+          },
+          {
+            "id": "horizontalarrangement_kj18aprg",
+            "type": "HorizontalArrangement",
+            "name": "DevBtns",
+            "props": {
+              "Width": "填满父组件",
+              "Height": "自动",
+              "AlignHorizontal": "left",
+              "BackgroundColor": "transparent"
+            },
+            "children": [
+              {
+                "id": "button_8yiabowc",
+                "type": "Button",
+                "name": "VibrateBtn",
+                "props": {
+                  "Text": "震动",
+                  "BackgroundColor": "#6d4c41",
+                  "TextColor": "#fff",
+                  "FontSize": 14,
+                  "Enabled": true,
+                  "Width": "自动",
+                  "Height": "自动"
+                },
+                "children": [],
+                "visible": true
+              },
+              {
+                "id": "button_tv50tndm",
+                "type": "Button",
+                "name": "CallBtn",
+                "props": {
+                  "Text": "拨号演示",
+                  "BackgroundColor": "#5d4037",
+                  "TextColor": "#fff",
+                  "FontSize": 14,
+                  "Enabled": true,
+                  "Width": "自动",
+                  "Height": "自动"
+                },
+                "children": [],
+                "visible": true
+              },
+              {
+                "id": "button_i5luogl8",
+                "type": "Button",
+                "name": "OpenBtn",
+                "props": {
+                  "Text": "打开网页",
+                  "BackgroundColor": "#4e342e",
+                  "TextColor": "#fff",
+                  "FontSize": 14,
+                  "Enabled": true,
+                  "Width": "自动",
+                  "Height": "自动"
+                },
+                "children": [],
+                "visible": true
+              },
+              {
+                "id": "button_7lmb8h19",
+                "type": "Button",
+                "name": "ResetStepBtn",
+                "props": {
+                  "Text": "重置步数",
+                  "BackgroundColor": "#795548",
+                  "TextColor": "#fff",
+                  "FontSize": 14,
+                  "Enabled": true,
+                  "Width": "自动",
+                  "Height": "自动"
+                },
+                "children": [],
+                "visible": true
+              }
+            ],
+            "visible": true
+          }
+        ],
+        "visible": true
+      },
+      "nonVisible": [
+        {
+          "id": "clock_6h0agg4n",
+          "type": "Clock",
+          "name": "Clock1",
+          "props": {
+            "TimerInterval": 1000,
+            "TimerEnabled": true
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "batterysensor_039ny94a",
+          "type": "BatterySensor",
+          "name": "BatterySensor1",
+          "props": {
+            "Enabled": true,
+            "Level": 100,
+            "Charging": false
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "networksensor_3yddjqgo",
+          "type": "NetworkSensor",
+          "name": "NetworkSensor1",
+          "props": {
+            "Enabled": true,
+            "Online": true,
+            "ConnectionType": "unknown"
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "shakesensor_7sm37qrj",
+          "type": "ShakeSensor",
+          "name": "ShakeSensor1",
+          "props": {
+            "Enabled": true,
+            "Sensitivity": 18
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "accelerometersensor_cq035vvf",
+          "type": "AccelerometerSensor",
+          "name": "AccelerometerSensor1",
+          "props": {
+            "Enabled": true,
+            "XAccel": 0,
+            "YAccel": 0,
+            "ZAccel": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "orientationsensor_o5ooll1b",
+          "type": "OrientationSensor",
+          "name": "OrientationSensor1",
+          "props": {
+            "Enabled": true,
+            "Angle": 0,
+            "Pitch": 0,
+            "Roll": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "locationsensor_1hhuzqyh",
+          "type": "LocationSensor",
+          "name": "LocationSensor1",
+          "props": {
+            "Enabled": false,
+            "Latitude": 0,
+            "Longitude": 0,
+            "Altitude": 0,
+            "Accuracy": 0,
+            "Speed": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "gyroscopesensor_ayb5cwr7",
+          "type": "GyroscopeSensor",
+          "name": "GyroscopeSensor1",
+          "props": {
+            "Enabled": true,
+            "XAngularVelocity": 0,
+            "YAngularVelocity": 0,
+            "ZAngularVelocity": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "proximitysensor_nviuihy7",
+          "type": "ProximitySensor",
+          "name": "ProximitySensor1",
+          "props": {
+            "Enabled": true,
+            "Distance": -1,
+            "Near": false
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "pedometer_38s74fxx",
+          "type": "Pedometer",
+          "name": "Pedometer1",
+          "props": {
+            "Enabled": true,
+            "Steps": 0,
+            "Sensitivity": 11
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "lightsensor_oatvz7wk",
+          "type": "LightSensor",
+          "name": "LightSensor1",
+          "props": {
+            "Enabled": true,
+            "Illuminance": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "magneticfieldsensor_li1tvnyn",
+          "type": "MagneticFieldSensor",
+          "name": "MagneticFieldSensor1",
+          "props": {
+            "Enabled": true,
+            "AbsoluteHeading": 0,
+            "MagX": 0,
+            "MagY": 0,
+            "MagZ": 0
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "vibrator_z31gs6nj",
+          "type": "Vibrator",
+          "name": "Vibrator1",
+          "props": {
+            "Duration": 200
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "phonecall_5y9so08c",
+          "type": "PhoneCall",
+          "name": "PhoneCall1",
+          "props": {
+            "PhoneNumber": ""
+          },
+          "children": [],
+          "visible": false
+        },
+        {
+          "id": "activitystarter_3mgpgm88",
+          "type": "ActivityStarter",
+          "name": "ActivityStarter1",
+          "props": {
+            "Action": "",
+            "DataUri": ""
+          },
+          "children": [],
+          "visible": false
+        }
+      ],
+      "blocksXml": "<xml xmlns=\"https://developers.google.com/blockly/xml\">\n  <block type=\"component_event\" x=\"20\" y=\"20\">\n    <field name=\"COMPONENT\">Clock1</field>\n    <field name=\"EVENT\">Timer</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">LEDLabel1</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\"><block type=\"clock_system_time\"><field name=\"COMPONENT\">Clock1</field></block></value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"160\">\n    <field name=\"COMPONENT\">BatterySensor1</field>\n    <field name=\"EVENT\">LevelChanged</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">BatLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\">\n          <block type=\"text_join\">\n            <mutation items=\"2\"></mutation>\n            <value name=\"ADD0\"><block type=\"text\"><field name=\"TEXT\">电量 </field></block></value>\n            <value name=\"ADD1\"><block type=\"component_get_property\"><field name=\"COMPONENT\">BatterySensor1</field><field name=\"PROP\">Level</field></block></value>\n          </block>\n        </value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"340\">\n    <field name=\"COMPONENT\">NetworkSensor1</field>\n    <field name=\"EVENT\">StatusChanged</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">NetLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\">\n          <block type=\"logic_ternary\">\n            <value name=\"IF\"><block type=\"component_get_property\"><field name=\"COMPONENT\">NetworkSensor1</field><field name=\"PROP\">Online</field></block></value>\n            <value name=\"THEN\"><block type=\"text\"><field name=\"TEXT\">网络：在线</field></block></value>\n            <value name=\"ELSE\"><block type=\"text\"><field name=\"TEXT\">网络：离线</field></block></value>\n          </block>\n        </value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"520\">\n    <field name=\"COMPONENT\">VibrateBtn</field>\n    <field name=\"EVENT\">Click</field>\n    <statement name=\"DO\">\n      <block type=\"vibrate\">\n        <field name=\"COMPONENT\">Vibrator1</field>\n        <value name=\"MS\"><block type=\"math_number\"><field name=\"NUM\">300</field></block></value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"640\">\n    <field name=\"COMPONENT\">CallBtn</field>\n    <field name=\"EVENT\">Click</field>\n    <statement name=\"DO\">\n      <block type=\"phone_call\">\n        <field name=\"COMPONENT\">PhoneCall1</field>\n        <value name=\"NUMBER\"><block type=\"text\"><field name=\"TEXT\">10086</field></block></value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"780\">\n    <field name=\"COMPONENT\">OpenBtn</field>\n    <field name=\"EVENT\">Click</field>\n    <statement name=\"DO\">\n      <block type=\"activity_start\">\n        <field name=\"COMPONENT\">ActivityStarter1</field>\n        <value name=\"URL\"><block type=\"text\"><field name=\"TEXT\">https://www.bilibili.com</field></block></value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"920\">\n    <field name=\"COMPONENT\">ShakeSensor1</field>\n    <field name=\"EVENT\">Shaking</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">ShakeLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\"><block type=\"text\"><field name=\"TEXT\">检测到摇一摇！</field></block></value>\n        <next>\n          <block type=\"vibrate\">\n            <field name=\"COMPONENT\">Vibrator1</field>\n            <value name=\"MS\"><block type=\"math_number\"><field name=\"NUM\">200</field></block></value>\n          </block>\n        </next>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"1080\">\n    <field name=\"COMPONENT\">Pedometer1</field>\n    <field name=\"EVENT\">StepTaken</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">StepLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\">\n          <block type=\"text_join\">\n            <mutation items=\"2\"></mutation>\n            <value name=\"ADD0\"><block type=\"text\"><field name=\"TEXT\">步数 </field></block></value>\n            <value name=\"ADD1\"><block type=\"component_get_property\"><field name=\"COMPONENT\">Pedometer1</field><field name=\"PROP\">Steps</field></block></value>\n          </block>\n        </value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"1240\">\n    <field name=\"COMPONENT\">ResetStepBtn</field>\n    <field name=\"EVENT\">Click</field>\n    <statement name=\"DO\">\n      <block type=\"pedometer_reset\"><field name=\"COMPONENT\">Pedometer1</field></block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"1360\">\n    <field name=\"COMPONENT\">AccelerometerSensor1</field>\n    <field name=\"EVENT\">AccelerationChanged</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">AccelLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\">\n          <block type=\"text_join\">\n            <mutation items=\"2\"></mutation>\n            <value name=\"ADD0\"><block type=\"text\"><field name=\"TEXT\">X加速度 </field></block></value>\n            <value name=\"ADD1\"><block type=\"component_get_property\"><field name=\"COMPONENT\">AccelerometerSensor1</field><field name=\"PROP\">XAccel</field></block></value>\n          </block>\n        </value>\n      </block>\n    </statement>\n  </block>\n  <block type=\"component_event\" x=\"20\" y=\"1520\">\n    <field name=\"COMPONENT\">MagneticFieldSensor1</field>\n    <field name=\"EVENT\">MagneticChanged</field>\n    <statement name=\"DO\">\n      <block type=\"component_set_property\">\n        <field name=\"COMPONENT\">CompassLabel</field>\n        <field name=\"PROP\">Text</field>\n        <value name=\"VALUE\">\n          <block type=\"text_join\">\n            <mutation items=\"2\"></mutation>\n            <value name=\"ADD0\"><block type=\"text\"><field name=\"TEXT\">指南针 </field></block></value>\n            <value name=\"ADD1\"><block type=\"component_get_property\"><field name=\"COMPONENT\">MagneticFieldSensor1</field><field name=\"PROP\">AbsoluteHeading</field></block></value>\n          </block>\n        </value>\n      </block>\n    </statement>\n  </block>\n</xml>"
+    }
+  ],
+  "activeScreenId": "screen_1swpwnra",
+  "assets": [
+    {
+      "id": "builtin_photo",
+      "name": "内置·示例照片.png",
+      "mime": "image/png",
+      "dataUrl": "./media/photo.png",
+      "createdAt": 1786495404833
+    },
+    {
+      "id": "builtin_sprite",
+      "name": "内置·精灵角色.png",
+      "mime": "image/png",
+      "dataUrl": "./media/sprite.png",
+      "createdAt": 1786495404834
+    },
+    {
+      "id": "builtin_avatar",
+      "name": "内置·头像.png",
+      "mime": "image/png",
+      "dataUrl": "./media/avatar.png",
+      "createdAt": 1786495404835
+    },
+    {
+      "id": "builtin_banner",
+      "name": "内置·媒体横幅.png",
+      "mime": "image/png",
+      "dataUrl": "./media/banner.png",
+      "createdAt": 1786495404836
+    },
+    {
+      "id": "builtin_poster",
+      "name": "内置·视频封面.png",
+      "mime": "image/png",
+      "dataUrl": "./media/poster.png",
+      "createdAt": 1786495404837
+    },
+    {
+      "id": "builtin_beep",
+      "name": "内置·提示音.wav",
+      "mime": "audio/wav",
+      "dataUrl": "./media/beep.wav",
+      "createdAt": 1786495404838
+    },
+    {
+      "id": "builtin_chime",
+      "name": "内置·成功音.wav",
+      "mime": "audio/wav",
+      "dataUrl": "./media/chime.wav",
+      "createdAt": 1786495404839
+    },
+    {
+      "id": "builtin_pop",
+      "name": "内置·轻点音.wav",
+      "mime": "audio/wav",
+      "dataUrl": "./media/pop.wav",
+      "createdAt": 1786495404840
+    },
+    {
+      "id": "builtin_video",
+      "name": "内置·短视频.mp4",
+      "mime": "video/mp4",
+      "dataUrl": "./media/clip.mp4",
+      "createdAt": 1786495404841
+    }
+  ],
+  "updatedAt": 1786495404833,
+  "sourceTemplate": "tour_device",
+  "templateRev": 6
+}

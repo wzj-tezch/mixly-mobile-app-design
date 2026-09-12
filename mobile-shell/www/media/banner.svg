@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="120" viewBox="0 0 360 120">
+  <rect width="360" height="120" rx="12" fill="#263238"/>
+  <text x="24" y="52" font-family="Segoe UI,sans-serif" font-size="28" fill="#80cbc4">媒体展台</text>
+  <text x="24" y="88" font-family="Segoe UI,sans-serif" font-size="16" fill="#b0bec5">图片 · 音频 · 视频 已内置</text>
+  <circle cx="300" cy="60" r="26" fill="#ff8a65"/>
+  <polygon points="292,48 292,72 314,60" fill="#fff"/>
+</svg>

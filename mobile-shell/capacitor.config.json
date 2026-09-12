@@ -1,0 +1,19 @@
+{
+  "appId": "com.ai2node.student",
+  "appName": "AI2学生作品",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "Camera": {
+      "permissions": ["camera", "photos"]
+    },
+    "Geolocation": {
+      "permissions": ["location"]
+    }
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

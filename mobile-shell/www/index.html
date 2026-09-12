@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>拓展·真机舱</title>
+<link rel="manifest" href="./manifest.webmanifest"/>
+<meta name="theme-color" content="#009688"/>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .app{padding:12px;max-width:420px;margin:0 auto}
+  .toast{position:fixed;left:50%;bottom:max(24px, env(safe-area-inset-bottom));transform:translateX(-50%);background:#202124;color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:.2s;z-index:99}
+  .toast.show{opacity:1}
+  .sensor-banner{background:#fef7e0;color:#7a5c00;padding:8px 12px;font-size:12px;border-bottom:1px solid #f3e2a7;display:none}
+  .sensor-banner.show{display:block}
+  .ai2-marquee{display:flex;align-items:center}
+  .ai2-marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;font-weight:600;font-size:14px;animation:ai2-marquee-scroll linear infinite}
+  @keyframes ai2-marquee-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .ai2-confetti{position:fixed;inset:0;pointer-events:none;z-index:120;overflow:hidden}
+  .ai2-confetti i{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;animation:ai2-fall linear forwards;opacity:.95}
+  @keyframes ai2-fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="sensor-banner" id="sensor-banner"></div>
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+window.__AI2__ = {
+  projectName: "拓展·真机舱",
+  screens: ["Screen1"]
+};
+const __SCREENS__ = {"Screen1":{"name":"Screen1","title":"真机舱","bg":"#efebe9","body":"<div data-name=\"ScreenRoot\" data-type=\"VerticalArrangement\" style=\"display:flex;flex-direction:column;width:100%;background:transparent;padding:4px;min-height:24px;\"><div data-name=\"Tip_t_zl9kmbfq\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#5a726c;font-size:12px;\">【指导】已装配全部传感器。电脑先看电量/网络；摇一摇、计步、陀螺仪、光线、接近、磁场、定位请装 APK 真机测。</div><div data-name=\"LEDLabel1\" data-type=\"LEDLabel\" style=\"width:100%;margin:8px 0;padding:8px 10px;border-radius:6px;background:#102027;color:#69f0ae;font-family:ui-monospace,Consolas,monospace;font-size:20px;letter-spacing:2px;text-align:center;\">TIME</div><div data-name=\"BatLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#202124;font-size:14px;\">电量：…</div><div data-name=\"NetLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#202124;font-size:14px;\">网络：…</div><div data-name=\"ShakeLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#bf360c;font-size:14px;\">摇一摇：等待中</div><div data-name=\"StepLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#202124;font-size:14px;\">步数 0</div><div data-name=\"AccelLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#5d4037;font-size:13px;\">X加速度 …</div><div data-name=\"CompassLabel\" data-type=\"Label\" style=\"box-sizing:border-box;margin:6px 0;width:100%;color:#5d4037;font-size:13px;\">指南针 …</div><div data-name=\"DevBtns\" data-type=\"HorizontalArrangement\" style=\"display:flex;flex-direction:row;gap:8px;align-items:center;width:100%;background:transparent;padding:4px;min-height:24px;\"><button data-name=\"VibrateBtn\" data-type=\"Button\" style=\"box-sizing:border-box;margin:6px 0;width:auto;height:auto;background:#6d4c41;color:#fff;font-size:14px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;\" >震动</button><button data-name=\"CallBtn\" data-type=\"Button\" style=\"box-sizing:border-box;margin:6px 0;width:auto;height:auto;background:#5d4037;color:#fff;font-size:14px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;\" >拨号演示</button><button data-name=\"OpenBtn\" data-type=\"Button\" style=\"box-sizing:border-box;margin:6px 0;width:auto;height:auto;background:#4e342e;color:#fff;font-size:14px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;\" >打开网页</button><button data-name=\"ResetStepBtn\" data-type=\"Button\" style=\"box-sizing:border-box;margin:6px 0;width:auto;height:auto;background:#795548;color:#fff;font-size:14px;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;\" >重置步数</button></div></div>","nameMap":{"ScreenRoot":{"type":"VerticalArrangement","props":{"Width":"填满父组件","Height":"填满父组件","BackgroundColor":"transparent"},"id":"verticalarrangement_yvuh3mse"},"Tip_t_zl9kmbfq":{"type":"Label","props":{"Text":"【指导】已装配全部传感器。电脑先看电量/网络；摇一摇、计步、陀螺仪、光线、接近、磁场、定位请装 APK 真机测。","TextColor":"#5a726c","FontSize":12,"Width":"填满父组件","Height":"自动"},"id":"label_urx5v29y"},"LEDLabel1":{"type":"LEDLabel","props":{"Text":"TIME","TextColor":"#69f0ae","BackgroundColor":"#102027","FontSize":20,"Width":"填满父组件"},"id":"ledlabel_s7bkb6s2"},"BatLabel":{"type":"Label","props":{"Text":"电量：…","TextColor":"#202124","FontSize":14,"Width":"填满父组件","Height":"自动"},"id":"label_gsjdy7ip"},"NetLabel":{"type":"Label","props":{"Text":"网络：…","TextColor":"#202124","FontSize":14,"Width":"填满父组件","Height":"自动"},"id":"label_k06tk60i"},"ShakeLabel":{"type":"Label","props":{"Text":"摇一摇：等待中","TextColor":"#bf360c","FontSize":14,"Width":"填满父组件","Height":"自动"},"id":"label_123fa7o6"},"StepLabel":{"type":"Label","props":{"Text":"步数 0","TextColor":"#202124","FontSize":14,"Width":"填满父组件","Height":"自动"},"id":"label_23qwtt1s"},"AccelLabel":{"type":"Label","props":{"Text":"X加速度 …","TextColor":"#5d4037","FontSize":13,"Width":"填满父组件","Height":"自动"},"id":"label_n9mwbwpw"},"CompassLabel":{"type":"Label","props":{"Text":"指南针 …","TextColor":"#5d4037","FontSize":13,"Width":"填满父组件","Height":"自动"},"id":"label_vtr98rgb"},"DevBtns":{"type":"HorizontalArrangement","props":{"Width":"填满父组件","Height":"自动","AlignHorizontal":"left","BackgroundColor":"transparent"},"id":"horizontalarrangement_y3t29fmh"},"VibrateBtn":{"type":"Button","props":{"Text":"震动","BackgroundColor":"#6d4c41","TextColor":"#fff","FontSize":14,"Enabled":true,"Width":"自动","Height":"自动"},"id":"button_z7c0g1j3"},"CallBtn":{"type":"Button","props":{"Text":"拨号演示","BackgroundColor":"#5d4037","TextColor":"#fff","FontSize":14,"Enabled":true,"Width":"自动","Height":"自动"},"id":"button_5yq9prub"},"OpenBtn":{"type":"Button","props":{"Text":"打开网页","BackgroundColor":"#4e342e","TextColor":"#fff","FontSize":14,"Enabled":true,"Width":"自动","Height":"自动"},"id":"button_pblbs1b9"},"ResetStepBtn":{"type":"Button","props":{"Text":"重置步数","BackgroundColor":"#795548","TextColor":"#fff","FontSize":14,"Enabled":true,"Width":"自动","Height":"自动"},"id":"button_y2ipq1lg"},"Clock1":{"type":"Clock","props":{"TimerInterval":1000,"TimerEnabled":true},"id":"clock_7zse3w6j"},"BatterySensor1":{"type":"BatterySensor","props":{"Enabled":true,"Level":100,"Charging":false},"id":"batterysensor_vofl121g"},"NetworkSensor1":{"type":"NetworkSensor","props":{"Enabled":true,"Online":true,"ConnectionType":"unknown"},"id":"networksensor_aj1dd627"},"ShakeSensor1":{"type":"ShakeSensor","props":{"Enabled":true,"Sensitivity":18},"id":"shakesensor_103hwdbk"},"AccelerometerSensor1":{"type":"AccelerometerSensor","props":{"Enabled":true,"XAccel":0,"YAccel":0,"ZAccel":0},"id":"accelerometersensor_kcnsxa8i"},"OrientationSensor1":{"type":"OrientationSensor","props":{"Enabled":true,"Angle":0,"Pitch":0,"Roll":0},"id":"orientationsensor_8h3m3w6x"},"LocationSensor1":{"type":"LocationSensor","props":{"Enabled":false,"Latitude":0,"Longitude":0,"Altitude":0,"Accuracy":0,"Speed":0},"id":"locationsensor_bobgshrs"},"GyroscopeSensor1":{"type":"GyroscopeSensor","props":{"Enabled":true,"XAngularVelocity":0,"YAngularVelocity":0,"ZAngularVelocity":0},"id":"gyroscopesensor_8q4vn72l"},"ProximitySensor1":{"type":"ProximitySensor","props":{"Enabled":true,"Distance":-1,"Near":false},"id":"proximitysensor_dgc3p90k"},"Pedometer1":{"type":"Pedometer","props":{"Enabled":true,"Steps":0,"Sensitivity":11},"id":"pedometer_erjpa9ds"},"LightSensor1":{"type":"LightSensor","props":{"Enabled":true,"Illuminance":0},"id":"lightsensor_0c25o47d"},"MagneticFieldSensor1":{"type":"MagneticFieldSensor","props":{"Enabled":true,"AbsoluteHeading":0,"MagX":0,"MagY":0,"MagZ":0},"id":"magneticfieldsensor_4yfzal2o"},"Vibrator1":{"type":"Vibrator","props":{"Duration":200},"id":"vibrator_rgzsm8gc"},"PhoneCall1":{"type":"PhoneCall","props":{"PhoneNumber":""},"id":"phonecall_ormbda74"},"ActivityStarter1":{"type":"ActivityStarter","props":{"Action":"","DataUri":""},"id":"activitystarter_wizbddw2"}},"dbNs":{},"code":"rt.on('Clock1','Timer', function() {\n  rt.setProp('LEDLabel1', 'Text', Date.now());\n});\n\nrt.on('BatterySensor1','LevelChanged', function() {\n  rt.setProp('BatLabel', 'Text', '电量 ' + String(rt.getProp('BatterySensor1', 'Level')));\n});\n\nrt.on('NetworkSensor1','StatusChanged', function() {\n  rt.setProp('NetLabel', 'Text', rt.getProp('NetworkSensor1', 'Online') ? '网络：在线' : '网络：离线');\n});\n\nrt.on('VibrateBtn','Click', function() {\n  rt.vibrate('Vibrator1', 300);\n});\n\nrt.on('CallBtn','Click', function() {\n  rt.phoneCall('10086');\n});\n\nrt.on('OpenBtn','Click', function() {\n  rt.startActivity('https://www.bilibili.com');\n});\n\nrt.on('ShakeSensor1','Shaking', function() {\n  rt.setProp('ShakeLabel', 'Text', '检测到摇一摇！');\n  rt.vibrate('Vibrator1', 200);\n});\n\nrt.on('Pedometer1','StepTaken', function() {\n  rt.setProp('StepLabel', 'Text', '步数 ' + String(rt.getProp('Pedometer1', 'Steps')));\n});\n\nrt.on('ResetStepBtn','Click', function() {\n  rt.pedometerReset('Pedometer1');\n});\n\nrt.on('AccelerometerSensor1','AccelerationChanged', function() {\n  rt.setProp('AccelLabel', 'Text', 'X加速度 ' + String(rt.getProp('AccelerometerSensor1', 'XAccel')));\n});\n\nrt.on('MagneticFieldSensor1','MagneticChanged', function() {\n  rt.setProp('CompassLabel', 'Text', '指南针 ' + String(rt.getProp('MagneticFieldSensor1', 'AbsoluteHeading')));\n});\n"}};
+window.__AI2_LOAD_SCREEN__ = function(name){
+  const p = __SCREENS__[name];
+  if (!p) { alert('屏幕不存在: '+name); return; }
+  window.__AI2_MOUNT__(p);
+};
+
+(function(){
+  const mode = "standalone";
+  const toast = document.getElementById('toast');
+  const banner = document.getElementById('sensor-banner');
+  const app = document.getElementById('app');
+  let listeners = {};
+  let timers = [];
+  let sensorHints = [];
+
+  function showToast(msg){
+    toast.textContent = String(msg);
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 1800);
+  }
+  function showSensorHint(msg){
+    if (sensorHints.includes(msg)) return;
+    sensorHints.push(msg);
+    banner.textContent = sensorHints.join(' · ');
+    banner.classList.add('show');
+  }
+  function elByName(name){ return document.querySelector('[data-name="'+name+'"]'); }
+  function lsKey(ns, tag){ return 'tinydb:'+ns+':'+tag; }
+  function clearTimers(){ timers.forEach(clearInterval); timers = []; }
+  function isNative(){
+    try { return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch(e){ return false; }
+  }
+  function capPlugin(name){
+    try {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) return window.Capacitor.Plugins[name];
+    } catch(e){}
+    return null;
+  }
+
+  function coerceNum(v){
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'number') return v;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : v;
+  }
+
+  function makeRt(){
+    return {
+      on(comp, event, fn){
+        const key = comp+'::'+event;
+        listeners[key] = listeners[key] || [];
+        listeners[key].push(fn);
+      },
+      setProp(comp, prop, value){
+        const el = elByName(comp);
+        const meta = window.__AI2__.nameMap[comp];
+        if (meta) meta.props[prop] = value;
+        if (!el) return;
+        if (prop === 'Text') {
+          const t = value == null ? '' : String(value);
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.value = t;
+          else if (el.tagName === 'BUTTON') el.textContent = t;
+          else if (el.classList && el.classList.contains('ai2-marquee')) {
+            const track = el.querySelector('.ai2-marquee-track');
+            if (track) track.innerHTML = '';
+            if (track) track.textContent = t + '   ' + t;
+          } else if (el.getAttribute('data-type') === 'ChatBubble') {
+            const bubble = el.firstElementChild;
+            if (bubble) bubble.textContent = t;
+          } else if (el.tagName === 'IMG' && el.getAttribute('data-type') === 'QRCode') {
+            const size = (meta && meta.props && meta.props.Size) || 140;
+            el.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(t);
+          } else el.textContent = t;
+        } else if (prop === 'Color' && el.type === 'color') {
+          el.value = String(value || '#009688');
+        } else if (prop === 'Remaining' && el.getAttribute('data-type') === 'Countdown') {
+          el.textContent = String(value);
+        } else if (prop === 'Elapsed' && el.getAttribute('data-type') === 'Stopwatch') {
+          el.textContent = (Number(value) || 0).toFixed(1) + 's';
+        } else if (prop === 'Result' && el.getAttribute('data-type') === 'Dice') {
+          const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+          const r = Math.max(1, Number(value) || 1);
+          el.textContent = (r >= 1 && r <= 6) ? faces[r - 1] : String(r);
+          el.style.fontSize = (r >= 1 && r <= 6) ? '40px' : '28px';
+        } else if (prop === 'Result' && el.getAttribute('data-type') === 'CoinFlip') {
+          el.textContent = String(value || '');
+        } else if (prop === 'Score' && el.getAttribute('data-type') === 'ScoreBoard') {
+          const v = el.querySelector('[data-score-val]');
+          if (v) v.textContent = String(Number(value) || 0);
+        } else if (prop === 'Percent' && el.getAttribute('data-type') === 'ProgressRing') {
+          const pct = Math.max(0, Math.min(100, Number(value) || 0));
+          const color = (meta && meta.props && meta.props.Color) || '#009688';
+          el.style.background = 'conic-gradient(' + color + ' ' + pct + '%, #e8eaed 0)';
+          const t = el.querySelector('[data-ring-pct]');
+          if (t) t.textContent = pct + '%';
+        } else if (prop === 'Value' && el.getAttribute('data-type') === 'LevelBar') {
+          const max = Math.max(1, Number(meta && meta.props && meta.props.MaxValue) || 100);
+          const val = Math.max(0, Math.min(max, Number(value) || 0));
+          const fill = el.querySelector('[data-level-fill]');
+          if (fill) fill.style.width = ((val / max) * 100) + '%';
+        } else if (prop === 'Value' && el.getAttribute('data-type') === 'Stepper') {
+          const t = el.querySelector('[data-step-val]');
+          if (t) t.textContent = String(Number(value) || 0);
+        } else if (prop === 'State' && el.getAttribute('data-type') === 'TrafficLight') {
+          const map = { '红': '#f44336', '黄': '#ffeb3b', '绿': '#4caf50' };
+          el.querySelectorAll('[data-lamp]').forEach(function(lamp){
+            const c = lamp.getAttribute('data-lamp');
+            lamp.style.background = (c === String(value)) ? (map[c] || '#455a64') : '#455a64';
+          });
+        } else if (prop === 'Answer' && el.getAttribute('data-type') === 'FortuneBall') {
+          el.textContent = String(value || '');
+        } else if (prop === 'Picture' && el.tagName === 'IMG') {
+          el.src = String(value || '');
+        } else if (prop === 'Source' && (el.tagName === 'AUDIO' || el.tagName === 'VIDEO')) {
+          el.src = String(value || '');
+        } else if (prop === 'Rating' && el.type === 'range') {
+          el.value = value;
+        } else if (prop === 'Selection' && el.tagName === 'SELECT') {
+          el.value = String(value || '');
+        } else if (prop === 'Date' && el.type === 'date') {
+          el.value = String(value || '');
+        } else if (prop === 'Time' && el.type === 'time') {
+          el.value = String(value || '');
+        } else if (prop === 'PaintColor') {
+          el.style.background = value;
+        } else if (prop === 'X') {
+          el.style.left = (Number(value)||0) + 'px';
+          el.style.marginLeft = '0';
+        } else if (prop === 'Y') {
+          el.style.top = (Number(value)||0) + 'px';
+          el.style.marginTop = '0';
+        } else if (prop === 'BackgroundColor') el.style.background = value;
+        else if (prop === 'TextColor') el.style.color = value;
+        else if (prop === 'Enabled') el.disabled = !value;
+        else if (prop === 'ThumbPosition' && el.type === 'range') el.value = value;
+        else if (prop === 'On' && el.getAttribute('data-type') === 'LightBulb') {
+          el.style.filter = value ? 'none' : 'grayscale(1) opacity(0.45)';
+        } else if (prop === 'Progress' && el.getAttribute('data-type') === 'ProgressBar') {
+          const pct = Math.max(0, Math.min(100, Number(value) || 0));
+          const fill = el.querySelector('[data-progress-fill]');
+          if (fill) fill.style.width = pct + '%';
+        } else if (prop === 'Checked' && el.getAttribute('data-type') === 'ToggleButton') {
+          const on = !!value;
+          el.style.background = on ? String((meta && meta.props && meta.props.BackgroundColor) || '#009688') : '#eceff1';
+          el.style.color = on ? String((meta && meta.props && meta.props.TextColor) || '#fff') : '#5f6368';
+        } else if (prop === 'Checked' || prop === 'On') {
+          const input = el.querySelector('input') || el;
+          input.checked = !!value;
+        }
+      },
+      getProp(comp, prop){
+        const el = elByName(comp);
+        const meta = window.__AI2__.nameMap[comp];
+        if (prop === 'Text' && el) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') return el.value;
+          const t = el.textContent || '';
+          const n = Number(t);
+          return (t.trim() !== '' && Number.isFinite(n)) ? n : t;
+        }
+        if (prop === 'ThumbPosition' && el) return Number(el.value);
+        if (prop === 'Rating' && el && el.type === 'range') return Number(el.value);
+        if (prop === 'Color' && el && el.type === 'color') return el.value;
+        if (prop === 'Selection' && el && el.tagName === 'SELECT') return el.value;
+        if (prop === 'Selection' && meta) return meta.props.Selection || '';
+        if (prop === 'Date' && el) return el.value;
+        if (prop === 'Time' && el) return el.value;
+        if ((prop === 'On' || prop === 'Checked') && el) {
+          const input = el.querySelector && el.querySelector('input');
+          const box = input || (el.type === 'checkbox' || el.type === 'radio' ? el : null);
+          if (box && typeof box.checked === 'boolean') return !!box.checked;
+        }
+        if (meta && meta.props && prop in meta.props) return coerceNum(meta.props[prop]);
+        return '';
+      },
+      alert(msg){ showToast(msg); },
+      messageDialog(msg, title, button){
+        showToast((title? title+': ' : '') + msg);
+        window.alert(String(title||'提示') + '\n' + String(msg) + '\n[' + String(button||'确定') + ']');
+      },
+      chooseDialog(comp, msg, title, btn1, btn2){
+        const ok = window.confirm(String(title||'选择') + '\n' + String(msg) + '\n\n确定=' + btn1 + ' / 取消=' + btn2);
+        const choice = ok ? btn1 : btn2;
+        const meta = window.__AI2__.nameMap[comp];
+        if (meta) meta.props.Choice = choice;
+        fire(comp, 'AfterChoosing');
+        showToast('选择: ' + choice);
+      },
+      canvasClear(comp){
+        const el = elByName(comp);
+        if (el && el.getContext) {
+          const ctx = el.getContext('2d');
+          ctx.clearRect(0,0,el.width,el.height);
+        }
+      },
+      canvasDrawLine(comp, x1, y1, x2, y2, color){
+        const el = elByName(comp);
+        if (!el || !el.getContext) return;
+        const ctx = el.getContext('2d');
+        ctx.strokeStyle = color || '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(Number(x1)||0, Number(y1)||0);
+        ctx.lineTo(Number(x2)||0, Number(y2)||0);
+        ctx.stroke();
+      },
+      canvasDrawCircle(comp, x, y, r, color){
+        const el = elByName(comp);
+        if (!el || !el.getContext) return;
+        const ctx = el.getContext('2d');
+        ctx.fillStyle = color || '#000';
+        ctx.beginPath();
+        ctx.arc(Number(x)||0, Number(y)||0, Math.max(0, Number(r)||0), 0, Math.PI * 2);
+        ctx.fill();
+      },
+      webGoTo(comp, url){
+        const el = elByName(comp);
+        let target = String(url || '').trim();
+        var ok = false;
+        try {
+          var parsed = new URL(target);
+          ok = (parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname.indexOf('.') >= 0 && !/(?:^|\.)(?:example\.com|iana\.org)$/i.test(parsed.hostname);
+        } catch (e) { ok = false; }
+        if (!ok) target = "data:text/html;charset=utf-8,%3C!DOCTYPE%20html%3E%3Chtml%20lang%3D%22zh-CN%22%3E%3Chead%3E%3Cmeta%20charset%3D%22UTF-8%22%2F%3E%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice-width%2Cinitial-scale%3D1%22%2F%3E%3Ctitle%3E%E7%BD%91%E9%A1%B5%E6%B5%8F%E8%A7%88%3C%2Ftitle%3E%0A%3Cstyle%3Ebody%7Bmargin%3A0%3Bfont-family%3Asystem-ui%2Csans-serif%3Bbackground%3A%23f8fafc%3Bcolor%3A%231e293b%3Bdisplay%3Agrid%3Bplace-items%3Acenter%3Bmin-height%3A100vh%3Bpadding%3A16px%3Btext-align%3Acenter%7D%0Ah1%7Bfont-size%3A16px%3Bmargin%3A0%200%208px%7Dp%7Bfont-size%3A13px%3Bline-height%3A1.5%3Bcolor%3A%2364748b%3Bmargin%3A0%200%208px%7Dcode%7Bbackground%3A%23e2e8f0%3Bpadding%3A1px%206px%3Bborder-radius%3A4px%3Bfont-size%3A12px%7D%3C%2Fstyle%3E%3C%2Fhead%3E%0A%3Cbody%3E%3Cdiv%3E%3Ch1%3E%E7%BD%91%E9%A1%B5%E6%B5%8F%E8%A7%88%E5%B7%B2%E5%B0%B1%E7%BB%AA%3C%2Fh1%3E%3Cp%3E%E5%A1%AB%E5%86%99%E5%AE%8C%E6%95%B4%20https%20%E7%BD%91%E5%9D%80%E5%90%8E%E9%A2%84%E8%A7%88%EF%BC%9B%E7%99%BE%E5%BA%A6%20%2F%20Google%20%E7%99%BB%E5%BD%95%E9%A1%B5%E7%AD%89%E9%80%9A%E5%B8%B8%3Cstrong%3E%E7%A6%81%E6%AD%A2%E5%B5%8C%E5%85%A5%3C%2Fstrong%3E%EF%BC%8C%E8%AF%B7%E7%94%A8%E3%80%8C%E6%96%B0%E7%AA%97%E5%8F%A3%E6%89%93%E5%BC%80%E3%80%8D%E3%80%82%3C%2Fp%3E%3Cp%3E%E5%8F%AF%E8%AF%95%EF%BC%9A%3Ccode%3Ehttps%3A%2F%2Fwww.wikipedia.org%3C%2Fcode%3E%3C%2Fp%3E%3C%2Fdiv%3E%3C%2Fbody%3E%3C%2Fhtml%3E";
+        if (el && el.tagName === 'IFRAME') el.src = target;
+        const meta = window.__AI2__.nameMap[comp];
+        if (meta) meta.props.HomeUrl = url;
+      },
+      listSetElements(comp, elements){
+        const el = elByName(comp);
+        const str = String(elements || '');
+        const meta = window.__AI2__.nameMap[comp];
+        if (meta) meta.props.ElementsFromString = str;
+        if (!el) return;
+        const items = str.split(',').map(s => s.trim()).filter(Boolean);
+        el.innerHTML = items.map(it => '<li data-item="'+it.replace(/"/g,'&quot;')+'" style="padding:10px 12px;border-bottom:1px solid #eee;cursor:pointer;">'+it.replace(/</g,'&lt;')+'</li>').join('');
+        el.querySelectorAll('li').forEach(li => {
+          li.addEventListener('click', () => {
+            if (window.__AI2__.nameMap[comp]) window.__AI2__.nameMap[comp].props.Selection = li.getAttribute('data-item');
+            fire(comp, 'AfterPicking');
+          });
+        });
+      },
+      dbStore(comp, tag, value){
+        const ns = window.__AI2__.dbNs[comp] || 'default';
+        const key = lsKey(ns, String(tag));
+        const raw = JSON.stringify(value);
+        localStorage.setItem(key, raw);
+        const Pref = capPlugin('Preferences');
+        if (Pref && Pref.set) Pref.set({ key: key, value: raw }).catch(function(){});
+      },
+      dbGet(comp, tag, fallback){
+        const ns = window.__AI2__.dbNs[comp] || 'default';
+        const key = lsKey(ns, String(tag));
+        const raw = localStorage.getItem(key);
+        if (raw == null) return fallback;
+        try { return JSON.parse(raw); } catch(e){ return fallback; }
+      },
+      dbClearTag(comp, tag){
+        const ns = window.__AI2__.dbNs[comp] || 'default';
+        const key = lsKey(ns, String(tag));
+        localStorage.removeItem(key);
+        const Pref = capPlugin('Preferences');
+        if (Pref && Pref.remove) Pref.remove({ key: key }).catch(function(){});
+      },
+      dbClearAll(comp){
+        const ns = window.__AI2__.dbNs[comp] || 'default';
+        const prefix = 'tinydb:'+ns+':';
+        Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => localStorage.removeItem(k));
+      },
+      takePicture(comp, imageComp){
+        const done = function(dataUrl){
+          const meta = window.__AI2__.nameMap[comp];
+          if (meta) meta.props.Picture = dataUrl || '';
+          if (imageComp) {
+            window.rt.setProp(imageComp, 'Picture', dataUrl || '');
+          }
+          fire(comp, 'AfterPicture');
+          showToast(dataUrl ? '拍照完成' : '未获取到照片');
+        };
+        const Cam = capPlugin('Camera');
+        if (Cam && Cam.getPhoto) {
+          Cam.getPhoto({ quality: 80, resultType: 'dataUrl', source: 'CAMERA' }).then(function(photo){
+            done(photo && (photo.dataUrl || photo.webPath) || '');
+          }).catch(function(err){
+            showSensorHint('相机不可用: ' + (err && err.message ? err.message : err));
+            done('');
+          });
+          return;
+        }
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.setAttribute('capture', 'environment');
+        input.onchange = function(){
+          var file = input.files && input.files[0];
+          if (!file) { done(''); return; }
+          var reader = new FileReader();
+          reader.onload = function(){ done(String(reader.result || '')); };
+          reader.onerror = function(){ done(''); };
+          reader.readAsDataURL(file);
+        };
+        input.click();
+      },
+      moveTo(comp, x, y){
+        let nx = Number(x)||0;
+        let ny = Number(y)||0;
+        const el = elByName(comp);
+        const parent = el && el.parentElement;
+        if (parent) {
+          const maxX = Math.max(0, parent.clientWidth - (el.offsetWidth || 24));
+          const maxY = Math.max(0, parent.clientHeight - (el.offsetHeight || 24));
+          nx = Math.max(0, Math.min(maxX, nx));
+          ny = Math.max(0, Math.min(maxY, ny));
+        }
+        window.rt.setProp(comp, 'X', nx);
+        window.rt.setProp(comp, 'Y', ny);
+      },
+      /** 在父容器内随机换位，保证离当前位置足够远；带短冷却防止连撞 */
+      randomMoveInParent(comp, minDist){
+        const meta = window.__AI2__.nameMap[comp];
+        const now = Date.now();
+        if (meta && meta._warpUntil && now < meta._warpUntil) return false;
+        const el = elByName(comp);
+        const parent = el && el.parentElement;
+        if (!parent) return false;
+        const pad = 8;
+        const maxX = Math.max(pad, parent.clientWidth - (el.offsetWidth || 36) - pad);
+        const maxY = Math.max(pad, parent.clientHeight - (el.offsetHeight || 36) - pad);
+        const curX = Number(meta && meta.props && meta.props.X) || 0;
+        const curY = Number(meta && meta.props && meta.props.Y) || 0;
+        const distNeed = Math.max(48, Number(minDist) || 80);
+        let nx = curX, ny = curY;
+        for (let i = 0; i < 24; i++) {
+          nx = pad + Math.floor(Math.random() * Math.max(1, maxX - pad));
+          ny = pad + Math.floor(Math.random() * Math.max(1, maxY - pad));
+          const dx = nx - curX, dy = ny - curY;
+          if (dx * dx + dy * dy >= distNeed * distNeed) break;
+        }
+        if (meta) meta._warpUntil = now + 350;
+        window.rt.moveTo(comp, nx, ny);
+        return true;
+      },
+      playerStart(comp){
+        const el = elByName(comp);
+        if (el && el.play) el.play().catch(function(){ showToast('无法播放'); });
+      },
+      playerPause(comp){
+        const el = elByName(comp);
+        if (el && el.pause) el.pause();
+      },
+      playerStop(comp){
+        const el = elByName(comp);
+        if (el) { try { el.pause(); el.currentTime = 0; } catch(e){} }
+      },
+      soundPlay(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const src = meta && meta.props ? String(meta.props.Source || './media/beep.wav') : './media/beep.wav';
+        if (!src) { showToast('未设置音效地址'); return; }
+        try { new Audio(src).play(); } catch(e){ showToast('音效播放失败'); }
+      },
+      ttsSpeak(comp, message){
+        const meta = window.__AI2__.nameMap[comp];
+        const text = String(message == null ? '' : message);
+        if (!text) { showToast('朗读内容为空'); return; }
+        if (!window.speechSynthesis) { showToast('当前浏览器不支持语音朗读'); return; }
+        try {
+          const u = new SpeechSynthesisUtterance(text);
+          u.lang = (meta && meta.props && meta.props.Language) ? String(meta.props.Language) : 'zh-CN';
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        } catch(e){ showToast('朗读失败'); }
+      },
+      speechGetText(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { showToast('当前浏览器不支持语音识别'); return; }
+        try {
+          const rec = new SR();
+          rec.lang = (meta && meta.props && meta.props.Language) ? String(meta.props.Language) : 'zh-CN';
+          rec.interimResults = false;
+          rec.maxAlternatives = 1;
+          rec.onresult = function(ev){
+            const t = ev.results && ev.results[0] && ev.results[0][0] ? ev.results[0][0].transcript : '';
+            if (meta) meta.props.Result = t;
+            fire(comp, 'AfterGettingText');
+            showToast('识别: ' + t);
+          };
+          rec.onerror = function(){ showToast('语音识别失败'); };
+          rec.start();
+          showToast('请开始说话…');
+        } catch(e){ showToast('无法启动语音识别'); }
+      },
+      shareMessage(message){
+        const text = String(message == null ? '' : message);
+        if (navigator.share) {
+          navigator.share({ text: text }).catch(function(){ showToast(text || '分享已取消'); });
+          return;
+        }
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function(){ showToast('已复制到剪贴板'); }).catch(function(){ showToast(text); });
+            return;
+          }
+        } catch(e){}
+        showToast(text || '无可分享内容');
+      },
+      startActivity(url){
+        const target = String(url || '').trim();
+        if (!target) { showToast('网址为空'); return; }
+        try { window.open(target, '_blank', 'noopener,noreferrer'); } catch(e){ showToast('无法打开: ' + target); }
+      },
+      phoneCall(number){
+        const n = String(number || '').trim();
+        if (!n) { showToast('电话号码为空'); return; }
+        try { window.location.href = 'tel:' + n; } catch(e){ showToast('无法拨打: ' + n); }
+      },
+      webGet(comp, url){
+        const meta = window.__AI2__.nameMap[comp];
+        let target = String(url || '').trim();
+        if (!target && meta && meta.props) target = String(meta.props.Url || '').trim();
+        if (!target) { showToast('网址为空'); return; }
+        fetch(target).then(function(r){ return r.text(); }).then(function(t){
+          if (meta) { meta.props.Url = target; meta.props.ResponseContent = t; }
+          fire(comp, 'GotText');
+        }).catch(function(){ showToast('网页请求失败'); if (meta) meta.props.ResponseContent = ''; fire(comp, 'GotText'); });
+      },
+      diceRoll(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const sides = Math.max(2, Math.min(20, Number(meta && meta.props && meta.props.Sides) || 6));
+        const result = 1 + Math.floor(Math.random() * sides);
+        window.rt.setProp(comp, 'Result', result);
+        fire(comp, 'Rolled');
+        showToast('掷出 ' + result);
+      },
+      countdownStart(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        if (meta._timer) { clearInterval(meta._timer); meta._timer = null; }
+        if (Number(meta.props.Remaining) <= 0) meta.props.Remaining = Number(meta.props.Seconds) || 10;
+        meta.props.Running = true;
+        meta._timer = setInterval(function(){
+          let rem = Number(meta.props.Remaining) || 0;
+          rem -= 1;
+          window.rt.setProp(comp, 'Remaining', rem);
+          fire(comp, 'Tick');
+          if (rem <= 0) {
+            clearInterval(meta._timer); meta._timer = null; meta.props.Running = false;
+            fire(comp, 'Finished');
+            showToast('倒计时结束');
+          }
+        }, 1000);
+        timers.push(meta._timer);
+      },
+      countdownPause(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta || !meta._timer) return;
+        clearInterval(meta._timer); meta._timer = null; meta.props.Running = false;
+      },
+      countdownReset(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        if (meta._timer) { clearInterval(meta._timer); meta._timer = null; }
+        meta.props.Running = false;
+        window.rt.setProp(comp, 'Remaining', Number(meta.props.Seconds) || 10);
+      },
+      stopwatchStart(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        if (meta._timer) { clearInterval(meta._timer); meta._timer = null; }
+        meta.props.Running = true;
+        meta._timer = setInterval(function(){
+          const next = (Number(meta.props.Elapsed) || 0) + 0.1;
+          window.rt.setProp(comp, 'Elapsed', Math.round(next * 10) / 10);
+          fire(comp, 'Tick');
+        }, 100);
+        timers.push(meta._timer);
+      },
+      stopwatchPause(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta || !meta._timer) return;
+        clearInterval(meta._timer); meta._timer = null; meta.props.Running = false;
+      },
+      stopwatchReset(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        if (meta._timer) { clearInterval(meta._timer); meta._timer = null; }
+        meta.props.Running = false;
+        window.rt.setProp(comp, 'Elapsed', 0);
+      },
+      qrRefresh(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        window.rt.setProp(comp, 'Text', meta.props.Text || '');
+      },
+      celebrate(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const duration = Number(meta && meta.props && meta.props.Duration) || 1800;
+        let layer = document.getElementById('ai2-confetti');
+        if (!layer) {
+          layer = document.createElement('div');
+          layer.id = 'ai2-confetti';
+          layer.className = 'ai2-confetti';
+          document.body.appendChild(layer);
+        }
+        layer.innerHTML = '';
+        const colors = ['#009688','#f44336','#ff9800','#4caf50','#2196f3','#e91e63','#ffeb3b'];
+        for (let i = 0; i < 48; i++) {
+          const piece = document.createElement('i');
+          piece.style.left = Math.random() * 100 + '%';
+          piece.style.background = colors[i % colors.length];
+          piece.style.animationDuration = (1.2 + Math.random() * 1.4) + 's';
+          piece.style.animationDelay = (Math.random() * 0.4) + 's';
+          piece.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+          layer.appendChild(piece);
+        }
+        showToast('🎉 恭喜！');
+        setTimeout(function(){ if (layer) layer.innerHTML = ''; }, duration);
+      },
+      coinFlip(comp){
+        const result = Math.random() < 0.5 ? '正' : '反';
+        window.rt.setProp(comp, 'Result', result);
+        fire(comp, 'Rolled');
+        showToast(result);
+      },
+      trafficNext(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const order = ['红','黄','绿'];
+        const cur = meta && meta.props ? String(meta.props.State || '红') : '红';
+        const next = order[(order.indexOf(cur) + 1) % order.length];
+        window.rt.setProp(comp, 'State', next);
+        fire(comp, 'Changed');
+      },
+      scoreAdd(comp, delta){
+        const meta = window.__AI2__.nameMap[comp];
+        const next = (Number(meta && meta.props && meta.props.Score) || 0) + (Number(delta) || 1);
+        window.rt.setProp(comp, 'Score', next);
+      },
+      scoreReset(comp){
+        window.rt.setProp(comp, 'Score', 0);
+      },
+      pedometerReset(comp){
+        window.rt.setProp(comp, 'Steps', 0);
+      },
+      fortuneAsk(comp){
+        const answers = ['是的','不是','再问问','很有可能','暂时别想','命运说好','需要努力','答案就在心中'];
+        const a = answers[Math.floor(Math.random() * answers.length)];
+        window.rt.setProp(comp, 'Answer', a);
+        fire(comp, 'GotAnswer');
+      },
+      vibrate(comp, ms){
+        const meta = window.__AI2__.nameMap[comp];
+        const d = Number(ms != null ? ms : (meta && meta.props && meta.props.Duration)) || 200;
+        if (navigator.vibrate) navigator.vibrate(d);
+        else showToast('震动 ' + d + 'ms（此设备可能不支持）');
+      },
+      clipboardCopy(comp, text){
+        const t = String(text == null ? '' : text);
+        const meta = window.__AI2__.nameMap[comp];
+        if (meta) meta.props.Text = t;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(t).then(function(){ showToast('已复制'); }).catch(function(){ showToast(t); });
+        } else showToast(t);
+      },
+      clipboardPaste(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(function(t){
+            if (meta) meta.props.Text = t;
+            fire(comp, 'GotText');
+          }).catch(function(){ showToast('无法读取剪贴板'); fire(comp, 'GotText'); });
+        } else {
+          showToast('浏览器不支持读取剪贴板');
+          fire(comp, 'GotText');
+        }
+      },
+      randomNextInt(comp, min, max){
+        const meta = window.__AI2__.nameMap[comp];
+        const a = Number(min); const b = Number(max);
+        const lo = Number.isFinite(a) ? a : 1;
+        const hi = Number.isFinite(b) ? b : 6;
+        const low = Math.min(lo, hi); const high = Math.max(lo, hi);
+        const n = low + Math.floor(Math.random() * (high - low + 1));
+        if (meta) meta.props.LastResult = n;
+        fire(comp, 'GotResult');
+        return n;
+      },
+      saveFile(comp, content, filename){
+        const meta = window.__AI2__.nameMap[comp];
+        const name = String(filename || (meta && meta.props && meta.props.FileName) || 'notes.txt');
+        const blob = new Blob([String(content == null ? '' : content)], { type: 'text/plain;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+        showToast('已下载 ' + name);
+      },
+      noteNs(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        return 'notes:' + String((meta && meta.props && meta.props.Namespace) || 'mynotes') + ':';
+      },
+      notePersist(key, value){
+        localStorage.setItem(key, value);
+        const Pref = capPlugin('Preferences');
+        if (Pref && Pref.set) Pref.set({ key: key, value: value }).catch(function(){});
+      },
+      noteRemove(key){
+        localStorage.removeItem(key);
+        const Pref = capPlugin('Preferences');
+        if (Pref && Pref.remove) Pref.remove({ key: key }).catch(function(){});
+      },
+      noteGetIndex(comp){
+        const raw = localStorage.getItem(window.rt.noteNs(comp) + 'index');
+        if (!raw) return [];
+        try {
+          const arr = JSON.parse(raw);
+          return Array.isArray(arr) ? arr.map(String) : [];
+        } catch(e){ return []; }
+      },
+      noteSetIndex(comp, titles){
+        window.rt.notePersist(window.rt.noteNs(comp) + 'index', JSON.stringify(titles));
+      },
+      noteSave(comp, title, content){
+        const meta = window.__AI2__.nameMap[comp];
+        const t = String(title == null ? '' : title).trim() || ('笔记' + Date.now());
+        const body = String(content == null ? '' : content);
+        const ns = window.rt.noteNs(comp);
+        window.rt.notePersist(ns + 'body:' + t, body);
+        const idx = window.rt.noteGetIndex(comp);
+        if (idx.indexOf(t) < 0) idx.unshift(t);
+        window.rt.noteSetIndex(comp, idx);
+        if (meta) {
+          meta.props.Title = t;
+          meta.props.Content = body;
+          meta.props.Titles = idx.join(',');
+          meta.props.Count = idx.length;
+        }
+        fire(comp, 'AfterSave');
+        showToast('已保存笔记：' + t);
+      },
+      noteLoad(comp, title){
+        const meta = window.__AI2__.nameMap[comp];
+        const t = String(title == null ? '' : title).trim();
+        const body = localStorage.getItem(window.rt.noteNs(comp) + 'body:' + t);
+        if (meta) {
+          meta.props.Title = t;
+          meta.props.Content = body == null ? '' : body;
+        }
+        fire(comp, 'AfterLoad');
+        if (body == null) showToast('未找到笔记：' + t);
+      },
+      noteDelete(comp, title){
+        const meta = window.__AI2__.nameMap[comp];
+        const t = String(title == null ? '' : title).trim();
+        window.rt.noteRemove(window.rt.noteNs(comp) + 'body:' + t);
+        const idx = window.rt.noteGetIndex(comp).filter(function(x){ return x !== t; });
+        window.rt.noteSetIndex(comp, idx);
+        if (meta) {
+          meta.props.Titles = idx.join(',');
+          meta.props.Count = idx.length;
+          if (meta.props.Title === t) { meta.props.Title = ''; meta.props.Content = ''; }
+        }
+        fire(comp, 'AfterDelete');
+        showToast('已删除：' + t);
+      },
+      noteList(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const idx = window.rt.noteGetIndex(comp);
+        if (meta) {
+          meta.props.Titles = idx.join(',');
+          meta.props.Count = idx.length;
+        }
+        fire(comp, 'AfterList');
+      },
+      noteClearAll(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const ns = window.rt.noteNs(comp);
+        const idx = window.rt.noteGetIndex(comp);
+        idx.forEach(function(t){ window.rt.noteRemove(ns + 'body:' + t); });
+        window.rt.noteRemove(ns + 'index');
+        if (meta) {
+          meta.props.Titles = '';
+          meta.props.Count = 0;
+          meta.props.Title = '';
+          meta.props.Content = '';
+        }
+        fire(comp, 'AfterDelete');
+        showToast('已清空笔记本');
+      },
+      pickFiles(comp, multiple){
+        const meta = window.__AI2__.nameMap[comp];
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = !!multiple || !!(meta && meta.props && meta.props.Multiple);
+        input.accept = String((meta && meta.props && meta.props.Accept) || '.txt,.csv,.md,.json,text/*');
+        input.onchange = function(){
+          const files = Array.from(input.files || []);
+          if (!files.length) return;
+          const maxBytes = 2.5 * 1024 * 1024;
+          const names = [];
+          const texts = [];
+          let i = 0;
+          const next = function(){
+            if (i >= files.length) {
+              if (meta) {
+                meta.props.FileName = names[0] || '';
+                meta.props.Content = texts[0] || '';
+                meta.props.FileNames = names.join(',');
+                meta.props.FileCount = names.length;
+                meta.props.CombinedText = texts.join('\n-----\n');
+              }
+              fire(comp, 'AfterPicking');
+              showToast('已选 ' + names.length + ' 个文件');
+              return;
+            }
+            const f = files[i++];
+            if (f.size > maxBytes) {
+              showToast('跳过过大文件: ' + f.name);
+              next();
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(){
+              names.push(f.name);
+              texts.push(String(reader.result || ''));
+              next();
+            };
+            reader.onerror = function(){ showToast('读取失败: ' + f.name); next(); };
+            reader.readAsText(f, 'utf-8');
+          };
+          next();
+        };
+        input.click();
+      },
+      pickFolder(comp){
+        const meta = window.__AI2__.nameMap[comp];
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        try { input.setAttribute('webkitdirectory', ''); input.webkitdirectory = true; } catch(e){}
+        input.onchange = function(){
+          const files = Array.from(input.files || []);
+          if (!files.length) {
+            showToast('未选择文件夹（可用「文件选择·多选」代替）');
+            return;
+          }
+          const maxBytes = 1.5 * 1024 * 1024;
+          const textExt = /\.(txt|csv|md|json|log|tsv|xml|html|htm|js|ts|css)$/i;
+          const names = [];
+          const texts = [];
+          let folder = '';
+          try {
+            const rel = files[0].webkitRelativePath || files[0].name;
+            folder = String(rel).split('/')[0] || '';
+          } catch(e){}
+          let i = 0;
+          const next = function(){
+            if (i >= files.length) {
+              if (meta) {
+                meta.props.FolderName = folder;
+                meta.props.FileNames = names.join(',');
+                meta.props.FileCount = names.length;
+                meta.props.CombinedText = texts.join('\n-----\n');
+                meta._folderTexts = texts;
+                meta._folderNames = names;
+              }
+              fire(comp, 'AfterPicking');
+              showToast('文件夹「' + (folder || '已选') + '」文本文件 ' + names.length + ' 个');
+              return;
+            }
+            const f = files[i++];
+            if (!textExt.test(f.name) || f.size > maxBytes) { next(); return; }
+            const reader = new FileReader();
+            reader.onload = function(){
+              names.push(f.name);
+              texts.push(String(reader.result || ''));
+              next();
+            };
+            reader.onerror = function(){ next(); };
+            reader.readAsText(f, 'utf-8');
+          };
+          next();
+        };
+        input.click();
+      },
+      searchFolder(comp, keyword){
+        const meta = window.__AI2__.nameMap[comp];
+        const key = String(keyword == null ? '' : keyword);
+        const names = (meta && meta._folderNames) || String(meta && meta.props && meta.props.FileNames || '').split(',').filter(Boolean);
+        const texts = (meta && meta._folderTexts) || String(meta && meta.props && meta.props.CombinedText || '').split('\n-----\n');
+        const hits = [];
+        for (let i = 0; i < texts.length; i++) {
+          const lines = String(texts[i] || '').split(/\r?\n/);
+          for (let j = 0; j < lines.length; j++) {
+            if (!key || lines[j].indexOf(key) >= 0) {
+              hits.push((names[i] || ('文件'+(i+1))) + ':' + (j+1) + ' ' + lines[j]);
+            }
+          }
+        }
+        if (meta) {
+          meta.props.MatchLines = hits.slice(0, 500).join('\n');
+          meta.props.MatchCount = hits.length;
+        }
+        fire(comp, 'AfterSearch');
+        showToast('命中 ' + hits.length + ' 行');
+      },
+      workshopSet(comp, text, lines, count){
+        const meta = window.__AI2__.nameMap[comp];
+        if (!meta) return;
+        meta.props.ResultText = text == null ? '' : String(text);
+        meta.props.ResultLines = lines == null ? '' : String(lines);
+        meta.props.ResultCount = Number(count) || 0;
+        fire(comp, 'GotResult');
+      },
+      textSearchLines(comp, text, keyword){
+        const key = String(keyword == null ? '' : keyword);
+        const lines = String(text == null ? '' : text).split(/\r?\n/).filter(function(l){ return !key || l.indexOf(key) >= 0; });
+        window.rt.workshopSet(comp, lines.join('\n'), lines.join('\n'), lines.length);
+      },
+      textReplaceAll(comp, text, find, repl){
+        const src = String(text == null ? '' : text);
+        const f = String(find == null ? '' : find);
+        const r = String(repl == null ? '' : repl);
+        const out = f ? src.split(f).join(r) : src;
+        window.rt.workshopSet(comp, out, out, out.split(/\r?\n/).length);
+      },
+      textWordStats(comp, text){
+        const src = String(text == null ? '' : text);
+        const meta = window.__AI2__.nameMap[comp];
+        const lines = src ? src.split(/\r?\n/) : [];
+        const words = src.trim() ? src.trim().split(/\s+/).length : 0;
+        if (meta) {
+          meta.props.CharCount = src.length;
+          meta.props.WordCount = words;
+          meta.props.LineCount = lines.length;
+          meta.props.ResultText = '字'+src.length+' 词'+words+' 行'+lines.length;
+          meta.props.ResultCount = words;
+        }
+        fire(comp, 'GotResult');
+      },
+      textSortLines(comp, text, desc){
+        const lines = String(text == null ? '' : text).split(/\r?\n/);
+        lines.sort(function(a,b){ return a.localeCompare(b, 'zh'); });
+        if (desc) lines.reverse();
+        window.rt.workshopSet(comp, lines.join('\n'), lines.join('\n'), lines.length);
+      },
+      textUniqueLines(comp, text){
+        const lines = String(text == null ? '' : text).split(/\r?\n/);
+        const seen = {};
+        const out = [];
+        lines.forEach(function(l){ if (!seen[l]) { seen[l] = 1; out.push(l); } });
+        window.rt.workshopSet(comp, out.join('\n'), out.join('\n'), out.length);
+      },
+      textReverseLines(comp, text){
+        const lines = String(text == null ? '' : text).split(/\r?\n/).reverse();
+        window.rt.workshopSet(comp, lines.join('\n'), lines.join('\n'), lines.length);
+      },
+      textCase(comp, text, upper){
+        const src = String(text == null ? '' : text);
+        const out = upper ? src.toUpperCase() : src.toLowerCase();
+        window.rt.workshopSet(comp, out, out, out.split(/\r?\n/).length);
+      },
+      textCsvColumn(comp, text, col){
+        const idx = Math.max(0, (Number(col) || 1) - 1);
+        const lines = String(text == null ? '' : text).split(/\r?\n/);
+        const out = lines.map(function(line){
+          const cells = line.split(/[,\t]/);
+          return cells[idx] != null ? cells[idx] : '';
+        }).filter(Boolean);
+        window.rt.workshopSet(comp, out.join('\n'), out.join('\n'), out.length);
+      },
+      textShuffleLines(comp, text){
+        const lines = String(text == null ? '' : text).split(/\r?\n/);
+        for (let i = lines.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const tmp = lines[i]; lines[i] = lines[j]; lines[j] = tmp;
+        }
+        window.rt.workshopSet(comp, lines.join('\n'), lines.join('\n'), lines.length);
+      },
+      /* 纯函数积木用 */
+      utilFilterLines(text, keyword){
+        const key = String(keyword == null ? '' : keyword);
+        return String(text == null ? '' : text).split(/\r?\n/).filter(function(l){ return !key || l.indexOf(key) >= 0; }).join('\n');
+      },
+      utilReplaceAll(text, find, repl){
+        const f = String(find == null ? '' : find);
+        if (!f) return String(text == null ? '' : text);
+        return String(text == null ? '' : text).split(f).join(String(repl == null ? '' : repl));
+      },
+      utilLineCount(text){
+        const s = String(text == null ? '' : text);
+        if (!s) return 0;
+        return s.split(/\r?\n/).length;
+      },
+      utilContainsCount(text, keyword){
+        const s = String(text == null ? '' : text);
+        const k = String(keyword == null ? '' : keyword);
+        if (!k) return 0;
+        let n = 0, pos = 0;
+        while ((pos = s.indexOf(k, pos)) >= 0) { n++; pos += k.length; }
+        return n;
+      },
+      galleryOpen(comp, imageComp){
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = function(){
+          const file = input.files && input.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = function(){
+            const url = String(reader.result || '');
+            const meta = window.__AI2__.nameMap[comp];
+            if (meta) meta.props.Selection = url;
+            if (imageComp) window.rt.setProp(imageComp, 'Picture', url);
+            fire(comp, 'AfterPicking');
+          };
+          reader.readAsDataURL(file);
+        };
+        input.click();
+      },
+      webDbStore(comp, tag, value){
+        const meta = window.__AI2__.nameMap[comp];
+        const key = 'webdb:' + String(tag);
+        localStorage.setItem(key, JSON.stringify(value));
+        if (meta) meta.props.LastTag = tag;
+        fire(comp, 'ValueStored');
+        const url = meta && meta.props && String(meta.props.ServiceURL || '').trim();
+        if (url) {
+          fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag: tag, value: value }) }).catch(function(){});
+        }
+      },
+      webDbGet(comp, tag){
+        const meta = window.__AI2__.nameMap[comp];
+        const key = 'webdb:' + String(tag);
+        const url = meta && meta.props && String(meta.props.ServiceURL || '').trim();
+        const finish = function(val){
+          if (meta) { meta.props.Tag = tag; meta.props.Value = val; }
+          fire(comp, 'GotValue');
+        };
+        if (url) {
+          fetch(url + (url.indexOf('?')>=0 ? '&' : '?') + 'tag=' + encodeURIComponent(String(tag)))
+            .then(function(r){ return r.json(); })
+            .then(function(j){ finish(j && (j.value != null ? j.value : j)); })
+            .catch(function(){
+              const raw = localStorage.getItem(key);
+              try { finish(raw == null ? '' : JSON.parse(raw)); } catch(e){ finish(''); }
+            });
+          return;
+        }
+        const raw = localStorage.getItem(key);
+        try { finish(raw == null ? '' : JSON.parse(raw)); } catch(e){ finish(''); }
+      },
+      openScreen(name){
+        if (mode === 'standalone' && typeof window.__AI2_LOAD_SCREEN__ === 'function') {
+          window.__AI2_LOAD_SCREEN__(name);
+          return;
+        }
+        try { parent.postMessage({ type: 'ai2-open-screen', name }, '*'); } catch(e){}
+        if (mode === 'standalone') showToast('未找到屏幕: ' + name);
+      },
+      closeScreen(){
+        if (mode === 'standalone' && window.__AI2__ && window.__AI2__.screens && window.__AI2__.screens[0]) {
+          window.__AI2_LOAD_SCREEN__(window.__AI2__.screens[0]);
+          return;
+        }
+        try { parent.postMessage({ type: 'ai2-close-screen' }, '*'); } catch(e){}
+      }
+    };
+  }
+
+  function bindUi(){
+    document.querySelectorAll('[data-name]').forEach(el => {
+      const name = el.getAttribute('data-name');
+      const type = el.getAttribute('data-type');
+      if (type === 'Button') {
+        el.addEventListener('click', () => fire(name, 'Click'));
+        let pressTimer = null;
+        el.addEventListener('pointerdown', () => {
+          pressTimer = setTimeout(() => fire(name, 'LongClick'), 550);
+        });
+        el.addEventListener('pointerup', () => { if (pressTimer) clearTimeout(pressTimer); });
+        el.addEventListener('pointerleave', () => { if (pressTimer) clearTimeout(pressTimer); });
+      }
+      if (type === 'Image') el.addEventListener('click', () => fire(name, 'Click'));
+      if (type === 'TextBox' || type === 'PasswordTextBox') {
+        el.addEventListener('focus', () => fire(name, 'GotFocus'));
+        el.addEventListener('input', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Text = el.value;
+        });
+        el.addEventListener('blur', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Text = el.value;
+          fire(name, 'LostFocus');
+        });
+      }
+      if (type === 'CheckBox' || type === 'Switch') {
+        const input = el.querySelector('input') || el;
+        input.addEventListener('change', () => {
+          const meta = window.__AI2__.nameMap[name];
+          if (meta) {
+            // 必须先把 DOM 状态写回 props，积木 getProp('On'/'Checked') 才能读到新值
+            if (type === 'Switch') meta.props.On = !!input.checked;
+            else meta.props.Checked = !!input.checked;
+          }
+          fire(name, 'Changed');
+        });
+      }
+      if (type === 'Slider') {
+        el.addEventListener('input', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.ThumbPosition = Number(el.value);
+          fire(name, 'PositionChanged');
+        });
+      }
+      if (type === 'Spinner') {
+        el.addEventListener('change', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Selection = el.value;
+          fire(name, 'AfterSelecting');
+        });
+      }
+      if (type === 'DatePicker') {
+        el.addEventListener('change', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Date = el.value;
+          fire(name, 'AfterDateSet');
+        });
+      }
+      if (type === 'TimePicker') {
+        el.addEventListener('change', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Time = el.value;
+          fire(name, 'AfterTimeSet');
+        });
+      }
+      if (type === 'ListView') {
+        el.querySelectorAll('li').forEach(li => {
+          li.addEventListener('click', () => {
+            if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Selection = li.getAttribute('data-item');
+            fire(name, 'AfterPicking');
+          });
+        });
+      }
+      if (type === 'Canvas') {
+        el.addEventListener('pointerdown', () => fire(name, 'Touched'));
+        el.addEventListener('pointermove', (ev) => { if (ev.buttons) fire(name, 'Dragged'); });
+      }
+      if (type === 'Ball' || type === 'ImageSprite') {
+        el.addEventListener('pointerdown', () => fire(name, 'Touched'));
+      }
+      if (type === 'Player' || type === 'VideoPlayer') {
+        el.addEventListener('ended', () => fire(name, 'Completed'));
+      }
+      if (type === 'RatingBar') {
+        el.addEventListener('input', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Rating = Number(el.value);
+          fire(name, 'Changed');
+        });
+      }
+      if (type === 'Dice' || type === 'CoinFlip' || type === 'TrafficLight' || type === 'LightBulb' || type === 'FortuneBall') {
+        // 只派发 Click；掷骰/抛币等方法必须由积木调用 rt.*，禁止预览硬编码绕过积木
+        el.addEventListener('click', () => fire(name, 'Click'));
+      }
+      if (type === 'Badge' || type === 'Avatar' || type === 'Hyperlink') {
+        el.addEventListener('click', () => fire(name, 'Click'));
+      }
+      if (type === 'ToggleButton') {
+        el.addEventListener('click', () => {
+          const meta = window.__AI2__.nameMap[name];
+          const next = !(meta && meta.props && meta.props.Checked);
+          window.rt.setProp(name, 'Checked', next);
+          fire(name, 'Changed');
+        });
+      }
+      if (type === 'Stepper') {
+        el.querySelectorAll('[data-step]').forEach((btn) => {
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const meta = window.__AI2__.nameMap[name];
+            if (!meta) return;
+            const dir = Number(btn.getAttribute('data-step')) || 0;
+            const step = Number(meta.props.Step) || 1;
+            const min = Number(meta.props.MinValue) || 0;
+            const max = Number(meta.props.MaxValue) || 99;
+            let v = (Number(meta.props.Value) || 0) + dir * step;
+            v = Math.max(min, Math.min(max, v));
+            window.rt.setProp(name, 'Value', v);
+            fire(name, 'Changed');
+          });
+        });
+      }
+      if (type === 'RadioButton') {
+        const input = el.querySelector('input');
+        if (input) input.addEventListener('change', () => {
+          const group = input.getAttribute('name');
+          Object.entries(window.__AI2__.nameMap).forEach(([n, m]) => {
+            if (m.type === 'RadioButton' && String(m.props.GroupName || 'group1') === group) {
+              window.rt.setProp(n, 'Checked', n === name);
+            }
+          });
+          fire(name, 'Changed');
+        });
+      }
+      if (type === 'TabBar') {
+        el.querySelectorAll('[data-tab]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const tab = btn.getAttribute('data-tab');
+            if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Selection = tab;
+            el.querySelectorAll('[data-tab]').forEach((b) => {
+              const on = b.getAttribute('data-tab') === tab;
+              b.style.background = on ? '#fff' : 'transparent';
+              b.style.fontWeight = on ? '700' : '400';
+            });
+            fire(name, 'AfterSelecting');
+          });
+        });
+      }
+      if (type === 'TextArea' || type === 'NumberBox' || type === 'SearchBar') {
+        el.addEventListener('focus', () => fire(name, 'GotFocus'));
+        el.addEventListener('blur', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Text = el.value;
+          fire(name, 'LostFocus');
+        });
+        el.addEventListener('input', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Text = el.value;
+          fire(name, 'Changed');
+        });
+        if (type === 'SearchBar') {
+          el.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+              if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Text = el.value;
+              fire(name, 'Submitted');
+            }
+          });
+        }
+      }
+      if (type === 'ColorPicker') {
+        el.addEventListener('input', () => {
+          if (window.__AI2__.nameMap[name]) window.__AI2__.nameMap[name].props.Color = el.value;
+          fire(name, 'Changed');
+        });
+      }
+      if (type === 'ChatBubble') {
+        el.addEventListener('click', () => fire(name, 'Click'));
+      }
+      if (type === 'Joystick') {
+        const knob = el.querySelector('.ai2-joy-knob');
+        const setPos = (clientX, clientY) => {
+          const rect = el.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          let dx = (clientX - cx) / (rect.width / 2);
+          let dy = (clientY - cy) / (rect.height / 2);
+          const mag = Math.sqrt(dx*dx + dy*dy);
+          if (mag > 1) { dx /= mag; dy /= mag; }
+          if (window.__AI2__.nameMap[name]) {
+            window.__AI2__.nameMap[name].props.X = Math.round(dx * 100) / 100;
+            window.__AI2__.nameMap[name].props.Y = Math.round(dy * 100) / 100;
+          }
+          if (knob) {
+            const kx = dx * (rect.width * 0.28);
+            const ky = dy * (rect.height * 0.28);
+            knob.style.transform = 'translate(calc(-50% + ' + kx + 'px), calc(-50% + ' + ky + 'px))';
+          }
+          fire(name, 'PositionChanged');
+        };
+        const reset = () => {
+          if (window.__AI2__.nameMap[name]) {
+            window.__AI2__.nameMap[name].props.X = 0;
+            window.__AI2__.nameMap[name].props.Y = 0;
+          }
+          if (knob) knob.style.transform = 'translate(-50%, -50%)';
+          fire(name, 'Released');
+        };
+        let dragging = false;
+        el.addEventListener('pointerdown', (ev) => { dragging = true; try { el.setPointerCapture(ev.pointerId); } catch(e){} setPos(ev.clientX, ev.clientY); });
+        el.addEventListener('pointermove', (ev) => { if (dragging) setPos(ev.clientX, ev.clientY); });
+        el.addEventListener('pointerup', () => { dragging = false; reset(); });
+        el.addEventListener('pointercancel', () => { dragging = false; reset(); });
+      }
+      if (type === 'WebViewer') {
+        const openBtn = el.parentElement && el.parentElement.querySelector('[data-wv-open]');
+        if (openBtn) openBtn.addEventListener('click', function(ev){
+          ev.preventDefault();
+          var url = openBtn.getAttribute('data-wv-open');
+          if (url) try { window.open(url, '_blank', 'noopener,noreferrer'); } catch(e){}
+        });
+        el.addEventListener('load', () => fire(name, 'PageLoaded'));
+      }
+    });
+  }
+
+  function fire(comp, event){
+    (listeners[comp+'::'+event] || []).forEach(fn => { try { fn(); } catch(e){ console.error(e); showToast('事件错误: '+e.message); } });
+  }
+
+  function bindSensors(){
+    Object.entries(window.__AI2__.nameMap).forEach(([name, meta]) => {
+      if (meta.type === 'Clock' && meta.props.TimerEnabled) {
+        timers.push(setInterval(() => fire(name, 'Timer'), Number(meta.props.TimerInterval)||1000));
+      }
+      if (meta.type === 'AccelerometerSensor' && meta.props.Enabled) {
+        if (!window.DeviceMotionEvent) showSensorHint('加速度传感器在此设备/浏览器不可用');
+        else window.addEventListener('devicemotion', (e) => {
+          const a = e.accelerationIncludingGravity; if (!a) return;
+          meta.props.XAccel = a.x; meta.props.YAccel = a.y; meta.props.ZAccel = a.z;
+          fire(name, 'AccelerationChanged');
+        });
+      }
+      if (meta.type === 'OrientationSensor' && meta.props.Enabled) {
+        if (!window.DeviceOrientationEvent) showSensorHint('方向传感器在此设备/浏览器不可用');
+        else window.addEventListener('deviceorientation', (e) => {
+          meta.props.Angle = e.alpha; meta.props.Roll = e.gamma; meta.props.Pitch = e.beta;
+          fire(name, 'OrientationChanged');
+        });
+      }
+      if (meta.type === 'LocationSensor' && meta.props.Enabled) {
+        const applyLoc = function(coords){
+          if (!coords) return;
+          meta.props.Latitude = coords.latitude;
+          meta.props.Longitude = coords.longitude;
+          meta.props.Altitude = coords.altitude == null ? 0 : coords.altitude;
+          meta.props.Accuracy = coords.accuracy == null ? 0 : coords.accuracy;
+          meta.props.Speed = coords.speed == null ? 0 : coords.speed;
+          fire(name, 'LocationChanged');
+        };
+        const Geo = capPlugin('Geolocation');
+        if (Geo && Geo.watchPosition) {
+          Geo.watchPosition({ enableHighAccuracy: true }, function(pos, err){
+            if (err || !pos) { showSensorHint('定位失败'); return; }
+            applyLoc(pos.coords);
+          }).catch(function(){ showSensorHint('定位权限被拒绝'); });
+        } else if (!navigator.geolocation) {
+          showSensorHint('定位传感器不可用');
+        } else {
+          navigator.geolocation.watchPosition(
+            (pos) => { applyLoc(pos.coords); },
+            () => showSensorHint('定位权限被拒绝或失败'),
+            { enableHighAccuracy: true, maximumAge: 2000 }
+          );
+        }
+      }
+      if (meta.type === 'Camera') {
+        /* 非可见组件，由积木 takePicture 触发 */
+      }
+      if (meta.type === 'BatterySensor' && meta.props.Enabled) {
+        if (navigator.getBattery) {
+          navigator.getBattery().then(function(bat){
+            const sync = function(){
+              meta.props.Level = Math.round((bat.level || 0) * 100);
+              meta.props.Charging = !!bat.charging;
+              fire(name, 'LevelChanged');
+            };
+            sync();
+            bat.addEventListener('levelchange', sync);
+            bat.addEventListener('chargingchange', sync);
+          }).catch(function(){ showSensorHint('电量接口不可用'); });
+        } else showSensorHint('当前浏览器不支持电量传感器');
+      }
+      if (meta.type === 'NetworkSensor' && meta.props.Enabled) {
+        const sync = function(){
+          meta.props.Online = !!navigator.onLine;
+          const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          meta.props.ConnectionType = conn && (conn.effectiveType || conn.type) ? (conn.effectiveType || conn.type) : (navigator.onLine ? 'online' : 'offline');
+          fire(name, 'StatusChanged');
+        };
+        sync();
+        window.addEventListener('online', sync);
+        window.addEventListener('offline', sync);
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn && conn.addEventListener) conn.addEventListener('change', sync);
+      }
+      if (meta.type === 'ShakeSensor' && meta.props.Enabled) {
+        if (!window.DeviceMotionEvent) showSensorHint('摇一摇需要支持加速度的设备');
+        else {
+          let last = 0;
+          window.addEventListener('devicemotion', function(e){
+            const a = e.accelerationIncludingGravity; if (!a) return;
+            const strength = Math.abs(a.x||0) + Math.abs(a.y||0) + Math.abs(a.z||0);
+            const sens = Number(meta.props.Sensitivity) || 18;
+            const now = Date.now();
+            if (strength > sens && now - last > 800) {
+              last = now;
+              fire(name, 'Shaking');
+            }
+          });
+        }
+      }
+      if (meta.type === 'GyroscopeSensor' && meta.props.Enabled) {
+        if (!window.DeviceMotionEvent) showSensorHint('陀螺仪在此设备/浏览器不可用');
+        else window.addEventListener('devicemotion', function(e){
+          const r = e.rotationRate; if (!r) return;
+          meta.props.XAngularVelocity = r.alpha == null ? 0 : r.alpha;
+          meta.props.YAngularVelocity = r.beta == null ? 0 : r.beta;
+          meta.props.ZAngularVelocity = r.gamma == null ? 0 : r.gamma;
+          fire(name, 'GyroscopeChanged');
+        });
+      }
+      if (meta.type === 'ProximitySensor' && meta.props.Enabled) {
+        let bound = false;
+        if ('onuserproximity' in window) {
+          bound = true;
+          window.addEventListener('userproximity', function(e){
+            meta.props.Near = !!e.near;
+            meta.props.Distance = e.near ? 0 : 5;
+            fire(name, 'ProximityChanged');
+          });
+        }
+        if (window.ProximitySensor) {
+          try {
+            const sensor = new window.ProximitySensor();
+            sensor.addEventListener('reading', function(){
+              meta.props.Distance = sensor.distance == null ? -1 : sensor.distance;
+              meta.props.Near = !!sensor.near || (sensor.distance != null && sensor.distance < 5);
+              fire(name, 'ProximityChanged');
+            });
+            sensor.start();
+            bound = true;
+          } catch (err) { /* ignore */ }
+        }
+        if (!bound) showSensorHint('接近传感器需支持该硬件的真机浏览器/APK');
+      }
+      if (meta.type === 'Pedometer' && meta.props.Enabled) {
+        if (!window.DeviceMotionEvent) showSensorHint('计步器需要加速度传感器');
+        else {
+          let lastMag = 0;
+          let lastStep = 0;
+          let armed = true;
+          window.addEventListener('devicemotion', function(e){
+            const a = e.accelerationIncludingGravity || e.acceleration; if (!a) return;
+            const mag = Math.sqrt((a.x||0)*(a.x||0)+(a.y||0)*(a.y||0)+(a.z||0)*(a.z||0));
+            const sens = Number(meta.props.Sensitivity) || 11;
+            const now = Date.now();
+            if (armed && mag - lastMag > sens * 0.15 && mag > sens && now - lastStep > 280) {
+              lastStep = now;
+              armed = false;
+              const steps = (Number(meta.props.Steps) || 0) + 1;
+              meta.props.Steps = steps;
+              fire(name, 'StepTaken');
+            }
+            if (mag < sens * 0.85) armed = true;
+            lastMag = mag * 0.35 + lastMag * 0.65;
+          });
+        }
+      }
+      if (meta.type === 'LightSensor' && meta.props.Enabled) {
+        let bound = false;
+        if (window.AmbientLightSensor) {
+          try {
+            const sensor = new window.AmbientLightSensor();
+            sensor.addEventListener('reading', function(){
+              meta.props.Illuminance = sensor.illuminance == null ? 0 : sensor.illuminance;
+              fire(name, 'LightChanged');
+            });
+            sensor.addEventListener('error', function(){ showSensorHint('光线传感器被拒绝或不可用'); });
+            sensor.start();
+            bound = true;
+          } catch (err) { /* ignore */ }
+        }
+        if (!bound && 'ondevicelight' in window) {
+          bound = true;
+          window.addEventListener('devicelight', function(e){
+            meta.props.Illuminance = e.value == null ? 0 : e.value;
+            fire(name, 'LightChanged');
+          });
+        }
+        if (!bound) showSensorHint('光线传感器需支持 Ambient Light 的浏览器/真机');
+      }
+      if (meta.type === 'MagneticFieldSensor' && meta.props.Enabled) {
+        let bound = false;
+        if (window.Magnetometer) {
+          try {
+            const sensor = new window.Magnetometer({ frequency: 10 });
+            sensor.addEventListener('reading', function(){
+              meta.props.MagX = sensor.x || 0;
+              meta.props.MagY = sensor.y || 0;
+              meta.props.MagZ = sensor.z || 0;
+              fire(name, 'MagneticChanged');
+            });
+            sensor.start();
+            bound = true;
+          } catch (err) { /* ignore */ }
+        }
+        const onOrient = function(e){
+          if (e.absolute || typeof e.webkitCompassHeading === 'number' || e.alpha != null) {
+            const heading = typeof e.webkitCompassHeading === 'number'
+              ? e.webkitCompassHeading
+              : (e.alpha == null ? 0 : e.alpha);
+            meta.props.AbsoluteHeading = heading;
+            if (!bound || e.absolute) fire(name, 'MagneticChanged');
+          }
+        };
+        if (window.DeviceOrientationEvent) {
+          window.addEventListener('deviceorientationabsolute', onOrient, true);
+          window.addEventListener('deviceorientation', onOrient, true);
+          bound = true;
+        }
+        if (!bound) showSensorHint('磁场/指南针传感器不可用');
+      }
+    });
+    if (isNative()) {
+      showToast('真机模式已启用');
+    }
+  }
+
+  function mountPayload(payload){
+    clearTimers();
+    listeners = {};
+    sensorHints = [];
+    banner.classList.remove('show');
+    banner.textContent = '';
+    document.title = payload.title;
+    document.body.style.background = payload.bg;
+    app.innerHTML = payload.body;
+    window.__AI2__ = Object.assign(window.__AI2__ || {}, {
+      screenName: payload.name,
+      nameMap: payload.nameMap,
+      dbNs: payload.dbNs,
+    });
+    window.rt = makeRt();
+    bindUi();
+    bindSensors();
+    try {
+      // eslint-disable-next-line no-new-func
+      new Function('rt', payload.code)(window.rt);
+    } catch (err) {
+      console.error(err);
+      showToast('积木运行错误: ' + err.message);
+    }
+  }
+
+  window.__AI2_MOUNT__ = mountPayload;
+  if (window.__AI2_BOOT_PAYLOAD__) mountPayload(window.__AI2_BOOT_PAYLOAD__);
+})();
+window.__AI2_LOAD_SCREEN__("Screen1");
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}
+</script>
+</body>
+</html>

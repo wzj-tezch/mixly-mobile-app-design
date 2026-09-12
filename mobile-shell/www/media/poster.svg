@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
+  <rect width="320" height="180" fill="#111"/>
+  <rect x="20" y="20" width="280" height="140" rx="8" fill="#37474f"/>
+  <polygon points="140,70 140,130 200,100" fill="#80deea"/>
+  <text x="24" y="168" font-family="Segoe UI,sans-serif" font-size="13" fill="#90a4ae">内置短视频封面</text>
+</svg>
