@@ -1,4 +1,4 @@
-# AI2 Node Inventor
+# Mixly 手机app设计
 
 基于 MIT App Inventor 交互理念的**可视化 App 搭建器**（电脑端网页）：设计器 + Blockly 积木 + 浏览器预览 + **PWA / 本机一键 APK**。
 
