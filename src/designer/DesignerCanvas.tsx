@@ -5,6 +5,7 @@ import { getMeta } from '@/components/registry'
 import { buildPreviewDocument } from '@/runtime/previewDoc'
 import { getScreenRuntimePlan } from '@/blocks/codegen'
 import { PhoneFrame } from '@/designer/PhoneFrame'
+import { SimulatorPanel, type SimMessage } from '@/app/SimulatorPanel'
 import { MixlyTrashCan } from '@/designer/MixlyTrashCan'
 
 function DndNode({ node, children }: { node: ComponentNode; children: ReactNode }) {
@@ -1004,6 +1005,15 @@ export function DesignerCanvas() {
   const stage = useProjectStore((s) => s.designerStage)
   const setDesignerStage = useProjectStore((s) => s.setDesignerStage)
   const screenStack = useRef<string[]>([])
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+
+  const sendSim = (msg: SimMessage) => {
+    try {
+      iframeRef.current?.contentWindow?.postMessage(msg, '*')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const srcDoc = useMemo(() => {
     const plan = getScreenRuntimePlan(project, screen)
@@ -1034,6 +1044,13 @@ export function DesignerCanvas() {
         if (prev && project.screens.some((s) => s.id === prev)) switchScreen(prev)
         else if (project.screens[0]) switchScreen(project.screens[0].id)
       }
+      if (e.data.type === 'ai2-preview-ready') {
+        try {
+          window.parent.postMessage({ type: 'go3-preview-opened' }, '*')
+        } catch {
+          /* ignore */
+        }
+      }
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
@@ -1050,13 +1067,13 @@ export function DesignerCanvas() {
           <div className="pane-chip">
             <span className={`pane-chip-dot ${stage}`} />
             <div>
-              <div className="pane-title">{stage === 'design' ? '设计屏幕' : '屏幕预览'}</div>
+              <div className="pane-title">{stage === 'design' ? '设计屏幕' : '教学模拟器'}</div>
               <div className="pane-sub">
                 {stage === 'design'
                   ? '拖入组件到手机里编辑'
                   : project.advancedMode
                     ? '预览运行代码页脚本（不跑积木）'
-                    : '查看当前屏幕的即时效果'}
+                    : '多屏能切、按钮能点；摇一摇/定位/光线用右侧模拟值'}
               </div>
             </div>
           </div>
@@ -1112,6 +1129,7 @@ export function DesignerCanvas() {
             ) : (
               <iframe
                 key={previewKey}
+                ref={iframeRef}
                 title="preview"
                 className="phone-screen preview-frame"
                 srcDoc={srcDoc}
@@ -1119,6 +1137,7 @@ export function DesignerCanvas() {
               />
             )}
           </PhoneFrame>
+          {stage === 'preview' && <SimulatorPanel onSim={sendSim} />}
           {stage === 'design' && <MixlyTrashCan />}
         </div>
       </section>

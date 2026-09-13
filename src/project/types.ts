@@ -143,6 +143,10 @@ export interface AiProject {
   /** 若由内置案例创建，记录种类与版本，便于自动升级积木 */
   sourceTemplate?: string
   templateRev?: number
+  /** 课程页传入的外部标签，go3 不当目录用 */
+  starterLabel?: string
+  /** 载入时的初始工程，重置回到这里；自身不含嵌套快照 */
+  starterSnapshot?: Omit<AiProject, 'starterSnapshot'>
   /** 发布后的只读链接编号，再次发布保持不变 */
   shareId?: string
   /** 默认 false。开启后预览/导出跑 scriptCode，不跑积木 */

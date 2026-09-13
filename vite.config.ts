@@ -14,6 +14,15 @@ export default defineConfig({
   base: './',
   server: {
     // 打包 APK 可能超过 2 分钟
-    headers: {},
+    headers: {
+      'Content-Security-Policy':
+        "frame-ancestors 'self' http://localhost:5174 http://127.0.0.1:5174",
+    },
+  },
+  preview: {
+    headers: {
+      'Content-Security-Policy':
+        "frame-ancestors 'self' http://localhost:5174 http://127.0.0.1:5174",
+    },
   },
 })

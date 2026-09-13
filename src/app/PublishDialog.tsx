@@ -45,6 +45,10 @@ export function PublishDialog({
                 ? '下面是可点击的外网链接，手机流量也能打开。别人只能玩成品，进不了设计器。Mixly 需保持运行，关掉后链接会失效。'
                 : '别人打开只能玩成品，进不了设计器，也不用登录。'}
             </p>
+            <p className="cloud-modal-hint">
+              一个月未再发布会自动失效，编号释放；再点发布可续期
+              {links?.expiresAt ? `（本次有效至 ${new Date(links.expiresAt).toLocaleString()}）` : ''}。
+            </p>
             <div className="cloud-field">
               {isPublic ? '外网链接' : '链接'}
               <a className="cloud-share-url" href={url} target="_blank" rel="noreferrer">

@@ -93,6 +93,7 @@ export type ShareLinks = {
   lanUrls: string[]
   localUrl: string
   tunnelError: string
+  expiresAt?: number
 }
 
 function asStringList(v: unknown): string[] {
@@ -112,6 +113,7 @@ export async function publishCloudProject(projectId: string, html: string, name:
     lanUrls: asStringList(data.lanUrls),
     localUrl: String(data.localUrl || ''),
     tunnelError: String(data.tunnelError || ''),
+    expiresAt: Number(data.expiresAt) || undefined,
   }
 }
 

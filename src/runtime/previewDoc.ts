@@ -400,6 +400,15 @@ const RUNTIME_STYLE = `
   }
   .sensor-banner{background:#fef7e0;color:#7a5c00;padding:8px 12px;font-size:12px;border-bottom:1px solid #f3e2a7;display:none}
   .sensor-banner.show{display:block}
+  .perm-mask{position:fixed;inset:0;background:rgba(20,24,32,.45);display:none;align-items:center;justify-content:center;z-index:140}
+  .perm-mask.show{display:flex}
+  .perm-card{width:min(320px,88vw);background:#fff;border-radius:12px;padding:16px 16px 12px;box-shadow:0 12px 32px rgba(0,0,0,.22)}
+  .perm-card h3{margin:0 0 8px;font-size:16px}
+  .perm-card p{margin:0 0 14px;font-size:13px;color:#4b5563;line-height:1.5}
+  .perm-actions{display:flex;gap:8px;justify-content:flex-end}
+  .perm-actions button{border:none;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer}
+  .perm-deny{background:#eceff1;color:#374151}
+  .perm-allow{background:#009688;color:#fff}
   .ai2-marquee{display:flex;align-items:center}
   .ai2-marquee-track{display:inline-block;white-space:nowrap;padding-left:100%;font-weight:600;font-size:14px;animation:ai2-marquee-scroll linear infinite}
   @keyframes ai2-marquee-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -424,6 +433,37 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
   let listeners = {};
   let timers = [];
   let sensorHints = [];
+  window.__AI2_PERMS__ = window.__AI2_PERMS__ || { location: null, camera: null, notify: null };
+  window.__AI2_NET_FAIL__ = window.__AI2_NET_FAIL__ || 'ok';
+  function ensurePermUi(){
+    if (document.getElementById('perm-mask')) return document.getElementById('perm-mask');
+    const mask = document.createElement('div');
+    mask.id = 'perm-mask';
+    mask.className = 'perm-mask';
+    mask.innerHTML = '<div class="perm-card"><h3 id="perm-title">需要权限</h3><p id="perm-body"></p><div class="perm-actions"><button type="button" class="perm-deny" id="perm-deny">拒绝</button><button type="button" class="perm-allow" id="perm-allow">允许</button></div></div>';
+    document.body.appendChild(mask);
+    return mask;
+  }
+  function askPermission(kind, title, body, onAllow, onDeny){
+    const cur = window.__AI2_PERMS__[kind];
+    if (cur === true) { onAllow(); return; }
+    if (cur === false) { onDeny(); return; }
+    const mask = ensurePermUi();
+    document.getElementById('perm-title').textContent = title;
+    document.getElementById('perm-body').textContent = body;
+    mask.classList.add('show');
+    const allowBtn = document.getElementById('perm-allow');
+    const denyBtn = document.getElementById('perm-deny');
+    const done = function(ok){
+      mask.classList.remove('show');
+      allowBtn.onclick = null;
+      denyBtn.onclick = null;
+      window.__AI2_PERMS__[kind] = ok;
+      if (ok) onAllow(); else onDeny();
+    };
+    allowBtn.onclick = function(){ done(true); };
+    denyBtn.onclick = function(){ done(false); };
+  }
 
   function showToast(msg){
     toast.textContent = String(msg);
@@ -736,6 +776,7 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
           el.style.marginTop = '0';
         }         else if (prop === 'BackgroundColor') el.style.background = safeCssColor(value);
         else if (prop === 'TextColor') el.style.color = safeCssColor(value);
+        else if (prop === 'FontSize') el.style.fontSize = (Number(value) || 16) + 'px';
         else if (prop === 'Enabled' && (el.getAttribute('data-type') === 'Alarm' || el.getAttribute('data-type') === 'Reminder' || el.getAttribute('data-type') === 'WeatherBox')) {
           if (el.getAttribute('data-type') === 'Alarm') paintAlarm(comp);
           else if (el.getAttribute('data-type') === 'Reminder') paintReminder(comp);
@@ -898,9 +939,31 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
       dbClearAll(comp){
         const ns = window.__AI2__.dbNs[comp] || 'default';
         const prefix = 'tinydb:'+ns+':';
-        Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(function(k){
+          localStorage.removeItem(k);
+          const Pref = capPlugin('Preferences');
+          if (Pref && Pref.remove) Pref.remove({ key: k }).catch(function(){});
+        });
+      },
+      clearLocalData(){
+        const prefixes = ['tinydb:', 'notes:', 'webdb:'];
+        Object.keys(localStorage).filter(function(k){
+          return prefixes.some(function(p){ return k.indexOf(p) === 0; });
+        }).forEach(function(k){
+          localStorage.removeItem(k);
+          const Pref = capPlugin('Preferences');
+          if (Pref && Pref.remove) Pref.remove({ key: k }).catch(function(){});
+        });
+        showToast('已清空本地数据');
       },
       takePicture(comp, imageComp){
+        const run = function(){ window.rt.takePictureNow(comp, imageComp); };
+        askPermission('camera', '需要使用相机', '应用想拍照或选图。机房可点允许后改用选文件。', run, function(){
+          showToast('相机权限被拒绝');
+          fire(comp, 'AfterPicture');
+        });
+      },
+      takePictureNow(comp, imageComp){
         const done = function(dataUrl){
           const meta = window.__AI2__.nameMap[comp];
           if (meta) meta.props.Picture = dataUrl || '';
@@ -1054,14 +1117,80 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
         try { window.location.href = 'tel:' + n; } catch(e){ showToast('无法拨打: ' + n); }
       },
       webGet(comp, url){
+        window.rt.webRequest(comp, 'GET', url, null);
+      },
+      webPost(comp, url, body){
+        window.rt.webRequest(comp, 'POST', url, body);
+      },
+      webRequest(comp, method, url, body){
         const meta = window.__AI2__.nameMap[comp];
         let target = String(url || '').trim();
         if (!target && meta && meta.props) target = String(meta.props.Url || '').trim();
-        if (!isSafeHttpUrl(target)) { showToast('只能请求 http/https 网址'); return; }
-        fetch(target).then(function(r){ return r.text(); }).then(function(t){
-          if (meta) { meta.props.Url = target; meta.props.ResponseContent = t; }
+        const fail = function(msg, code){
+          if (meta) {
+            meta.props.ErrorMessage = String(msg || '请求失败');
+            meta.props.ResponseCode = code == null ? 0 : code;
+            meta.props.ResponseContent = '';
+          }
+          showToast(String(msg || '请求失败'));
+          fire(comp, 'ErrorOccurred');
+        };
+        const ok = function(text, code){
+          const raw = text == null ? '' : String(text);
+          if (meta) {
+            meta.props.Url = target;
+            meta.props.ResponseContent = raw;
+            meta.props.ResponseCode = code;
+            meta.props.ErrorMessage = '';
+          }
+          if (!String(raw).trim()) {
+            fail('返回数据为空', code);
+            return;
+          }
           fire(comp, 'GotText');
-        }).catch(function(){ showToast('网页请求失败'); if (meta) meta.props.ResponseContent = ''; fire(comp, 'GotText'); });
+        };
+        const mode = window.__AI2_NET_FAIL__ || 'ok';
+        if (mode === 'timeout') { fail('请求超时', 0); return; }
+        if (mode === 'empty') { ok('', 200); return; }
+        if (mode === 'error') { fail('网络错误（模拟）', 0); return; }
+        const isLesson = /^lesson:\\/\\//i.test(target) || /\\/api\\/lesson-backup/i.test(target);
+        if (isLesson || target === 'lesson://backup') {
+          const key = 'webdb:lesson-backup';
+          setTimeout(function(){
+            if (String(method).toUpperCase() === 'POST') {
+              localStorage.setItem(key, JSON.stringify({ value: body }));
+              ok(body == null ? '' : String(body), 200);
+            } else {
+              const raw = localStorage.getItem(key);
+              try {
+                const j = raw == null ? '' : JSON.parse(raw);
+                ok(j && j.value != null ? String(j.value) : (raw || ''), 200);
+              } catch (e) {
+                ok(raw || '', 200);
+              }
+            }
+          }, 320);
+          return;
+        }
+        if (!isSafeHttpUrl(target)) { fail('只能请求 http/https 网址或 lesson://backup', 0); return; }
+        const ctrl = new AbortController();
+        const timer = setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 8000);
+        const opts = { method: method || 'GET', signal: ctrl.signal, headers: {} };
+        if (String(method).toUpperCase() === 'POST') {
+          opts.headers['Content-Type'] = 'application/json';
+          opts.body = body == null ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
+        }
+        fetch(target, opts).then(function(r){
+          clearTimeout(timer);
+          return r.text().then(function(t){ return { ok: r.ok, status: r.status, text: t }; });
+        }).then(function(res){
+          if (!res.ok) { fail('HTTP ' + res.status, res.status); return; }
+          ok(res.text, res.status);
+        }).catch(function(err){
+          clearTimeout(timer);
+          if (err && err.name === 'AbortError') fail('请求超时', 0);
+          else fail('网页请求失败', 0);
+        });
       },
       diceRoll(comp){
         const meta = window.__AI2__.nameMap[comp];
@@ -1259,19 +1388,43 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
       noteSetIndex(comp, titles){
         window.rt.notePersist(window.rt.noteNs(comp) + 'index', JSON.stringify(titles));
       },
+      noteParseBody(raw){
+        if (raw == null) return { content: '', updatedAt: '' };
+        try {
+          const j = JSON.parse(raw);
+          if (j && typeof j === 'object' && (j.content != null || j.updatedAt != null)) {
+            return { content: String(j.content || ''), updatedAt: String(j.updatedAt || '') };
+          }
+        } catch(e){}
+        return { content: String(raw), updatedAt: '' };
+      },
+      noteFormatTime(ms){
+        const d = new Date(ms);
+        return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      },
+      noteTitleKey(item){
+        const s = String(item || '');
+        const i = s.lastIndexOf(' · ');
+        return i >= 0 ? s.slice(0, i) : s;
+      },
       noteSave(comp, title, content){
         const meta = window.__AI2__.nameMap[comp];
-        const t = String(title == null ? '' : title).trim() || ('笔记' + Date.now());
+        const t = window.rt.noteTitleKey(title == null ? '' : title).trim() || ('笔记' + Date.now());
         const body = String(content == null ? '' : content);
+        const stamp = window.rt.noteFormatTime(Date.now());
         const ns = window.rt.noteNs(comp);
-        window.rt.notePersist(ns + 'body:' + t, body);
+        window.rt.notePersist(ns + 'body:' + t, JSON.stringify({ content: body, updatedAt: stamp }));
         const idx = window.rt.noteGetIndex(comp);
         if (idx.indexOf(t) < 0) idx.unshift(t);
         window.rt.noteSetIndex(comp, idx);
         if (meta) {
           meta.props.Title = t;
           meta.props.Content = body;
-          meta.props.Titles = idx.join(',');
+          meta.props.UpdatedAt = stamp;
+          meta.props.Titles = idx.map(function(name){
+            const rec = window.rt.noteParseBody(localStorage.getItem(ns + 'body:' + name));
+            return rec.updatedAt ? (name + ' · ' + rec.updatedAt) : name;
+          }).join(',');
           meta.props.Count = idx.length;
         }
         fire(comp, 'AfterSave');
@@ -1279,18 +1432,20 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
       },
       noteLoad(comp, title){
         const meta = window.__AI2__.nameMap[comp];
-        const t = String(title == null ? '' : title).trim();
-        const body = localStorage.getItem(window.rt.noteNs(comp) + 'body:' + t);
+        const t = window.rt.noteTitleKey(title == null ? '' : title).trim();
+        const raw = localStorage.getItem(window.rt.noteNs(comp) + 'body:' + t);
+        const rec = window.rt.noteParseBody(raw);
         if (meta) {
           meta.props.Title = t;
-          meta.props.Content = body == null ? '' : body;
+          meta.props.Content = raw == null ? '' : rec.content;
+          meta.props.UpdatedAt = raw == null ? '' : rec.updatedAt;
         }
         fire(comp, 'AfterLoad');
-        if (body == null) showToast('未找到笔记：' + t);
+        if (raw == null) showToast('未找到笔记：' + t);
       },
       noteDelete(comp, title){
         const meta = window.__AI2__.nameMap[comp];
-        const t = String(title == null ? '' : title).trim();
+        const t = window.rt.noteTitleKey(title == null ? '' : title).trim();
         window.rt.noteRemove(window.rt.noteNs(comp) + 'body:' + t);
         const idx = window.rt.noteGetIndex(comp).filter(function(x){ return x !== t; });
         window.rt.noteSetIndex(comp, idx);
@@ -1305,8 +1460,12 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
       noteList(comp){
         const meta = window.__AI2__.nameMap[comp];
         const idx = window.rt.noteGetIndex(comp);
+        const ns = window.rt.noteNs(comp);
         if (meta) {
-          meta.props.Titles = idx.join(',');
+          meta.props.Titles = idx.map(function(name){
+            const rec = window.rt.noteParseBody(localStorage.getItem(ns + 'body:' + name));
+            return rec.updatedAt ? (name + ' · ' + rec.updatedAt) : name;
+          }).join(',');
           meta.props.Count = idx.length;
         }
         fire(comp, 'AfterList');
@@ -1322,6 +1481,7 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
           meta.props.Count = 0;
           meta.props.Title = '';
           meta.props.Content = '';
+          meta.props.UpdatedAt = '';
         }
         fire(comp, 'AfterDelete');
         showToast('已清空笔记本');
@@ -1561,9 +1721,12 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
       webDbStore(comp, tag, value){
         const meta = window.__AI2__.nameMap[comp];
         const key = 'webdb:' + String(tag);
+        const mode = window.__AI2_NET_FAIL__ || 'ok';
+        if (mode === 'timeout') { showToast('请求超时'); fire(comp, 'ErrorOccurred'); return; }
+        if (mode === 'error') { showToast('网络错误（模拟）'); fire(comp, 'ErrorOccurred'); return; }
         localStorage.setItem(key, JSON.stringify(value));
         if (meta) meta.props.LastTag = tag;
-        fire(comp, 'ValueStored');
+        setTimeout(function(){ fire(comp, 'ValueStored'); }, 280);
         const url = meta && meta.props && String(meta.props.ServiceURL || '').trim();
         if (url && isSafeHttpUrl(url)) {
           fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tag: tag, value: value }) }).catch(function(){});
@@ -1577,9 +1740,15 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
           if (meta) { meta.props.Tag = tag; meta.props.Value = val; }
           fire(comp, 'GotValue');
         };
+        const mode = window.__AI2_NET_FAIL__ || 'ok';
+        if (mode === 'timeout') { showToast('请求超时'); fire(comp, 'ErrorOccurred'); return; }
+        if (mode === 'error') { showToast('网络错误（模拟）'); fire(comp, 'ErrorOccurred'); return; }
+        if (mode === 'empty') { finish(''); return; }
         if (url && isSafeHttpUrl(url)) {
-          fetch(url + (url.indexOf('?')>=0 ? '&' : '?') + 'tag=' + encodeURIComponent(String(tag)))
-            .then(function(r){ return r.json(); })
+          const ctrl = new AbortController();
+          const timer = setTimeout(function(){ try { ctrl.abort(); } catch(e){} }, 8000);
+          fetch(url + (url.indexOf('?')>=0 ? '&' : '?') + 'tag=' + encodeURIComponent(String(tag)), { signal: ctrl.signal })
+            .then(function(r){ clearTimeout(timer); return r.json(); })
             .then(function(j){ finish(j && (j.value != null ? j.value : j)); })
             .catch(function(){
               const raw = localStorage.getItem(key);
@@ -1587,8 +1756,10 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
             });
           return;
         }
-        const raw = localStorage.getItem(key);
-        try { finish(raw == null ? '' : JSON.parse(raw)); } catch(e){ finish(''); }
+        setTimeout(function(){
+          const raw = localStorage.getItem(key);
+          try { finish(raw == null ? '' : JSON.parse(raw)); } catch(e){ finish(''); }
+        }, 280);
       },
       openScreen(name){
         if (mode === 'standalone' && typeof window.__AI2_LOAD_SCREEN__ === 'function') {
@@ -1694,6 +1865,15 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
         showToast('已唤起邮件');
       },
       notifyShow(comp, title, text){
+        const t = String(title || '提醒');
+        const b = String(text || '');
+        const run = function(){ window.rt.notifyShowNow(comp, t, b); };
+        askPermission('notify', '需要发送通知', '应用想弹出一条系统通知。拒绝后仍可用屏幕上的提示。', run, function(){
+          showToast(t + ' ' + b);
+          fire(comp, 'Notified');
+        });
+      },
+      notifyShowNow(comp, title, text){
         const t = String(title || '提醒');
         const b = String(text || '');
         if (window.Notification && Notification.permission === 'granted') {
@@ -2424,21 +2604,26 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
           meta.props.Speed = coords.speed == null ? 0 : coords.speed;
           fire(name, 'LocationChanged');
         };
-        const Geo = capPlugin('Geolocation');
-        if (Geo && Geo.watchPosition) {
-          Geo.watchPosition({ enableHighAccuracy: true }, function(pos, err){
-            if (err || !pos) { showSensorHint('定位失败'); return; }
-            applyLoc(pos.coords);
-          }).catch(function(){ showSensorHint('定位权限被拒绝'); });
-        } else if (!navigator.geolocation) {
-          showSensorHint('定位传感器不可用');
-        } else {
-          navigator.geolocation.watchPosition(
-            (pos) => { applyLoc(pos.coords); },
-            () => showSensorHint('定位权限被拒绝或失败'),
-            { enableHighAccuracy: true, maximumAge: 2000 }
-          );
-        }
+        const startWatch = function(){
+          const Geo = capPlugin('Geolocation');
+          if (Geo && Geo.watchPosition) {
+            Geo.watchPosition({ enableHighAccuracy: true }, function(pos, err){
+              if (err || !pos) { showSensorHint('定位失败'); return; }
+              applyLoc(pos.coords);
+            }).catch(function(){ showSensorHint('定位权限被拒绝'); });
+          } else if (!navigator.geolocation) {
+            showSensorHint('定位传感器不可用');
+          } else {
+            navigator.geolocation.watchPosition(
+              (pos) => { applyLoc(pos.coords); },
+              () => showSensorHint('定位权限被拒绝或失败'),
+              { enableHighAccuracy: true, maximumAge: 2000 }
+            );
+          }
+        };
+        askPermission('location', '需要使用定位', '应用想读取你的位置。机房可点允许，再用模拟器面板填经纬度。', startWatch, function(){
+          showSensorHint('定位权限被拒绝');
+        });
       }
       if (meta.type === 'Camera') {
         /* 非可见组件，由积木 takePicture 触发 */
@@ -2635,8 +2820,49 @@ function runtimeBootScript(mode: 'iframe' | 'standalone'): string {
     }
   }
 
+  function applySim(msg){
+    if (!msg || msg.type !== 'ai2-sim') return;
+    if (msg.sensor === 'netfail') {
+      window.__AI2_NET_FAIL__ = msg.mode || 'ok';
+      showToast(msg.mode === 'ok' ? '网络演练：正常' : ('网络演练：' + msg.mode));
+      return;
+    }
+    if (msg.sensor === 'permission') {
+      window.__AI2_PERMS__[msg.name] = !!msg.allow;
+      showToast((msg.name === 'location' ? '定位' : msg.name === 'camera' ? '相机' : '通知') + (msg.allow ? '已允许' : '已拒绝'));
+      return;
+    }
+    Object.entries(window.__AI2__.nameMap || {}).forEach(function(entry){
+      const name = entry[0];
+      const meta = entry[1];
+      if (msg.sensor === 'shake' && meta.type === 'ShakeSensor') fire(name, 'Shaking');
+      if (msg.sensor === 'location' && meta.type === 'LocationSensor') {
+        if (window.__AI2_PERMS__.location === false) {
+          showSensorHint('定位权限被拒绝');
+          return;
+        }
+        window.__AI2_PERMS__.location = true;
+        const lat = msg.value && msg.value.lat;
+        const lng = msg.value && msg.value.lng;
+        meta.props.Latitude = lat;
+        meta.props.Longitude = lng;
+        meta.props.Altitude = 0;
+        meta.props.Accuracy = 5;
+        meta.props.Speed = 0;
+        fire(name, 'LocationChanged');
+      }
+      if (msg.sensor === 'light' && meta.type === 'LightSensor') {
+        meta.props.Illuminance = Number(msg.value) || 0;
+        fire(name, 'LightChanged');
+      }
+    });
+  }
+  window.addEventListener('message', function(e){
+    if (e && e.data) applySim(e.data);
+  });
   window.__AI2_MOUNT__ = mountPayload;
   if (window.__AI2_BOOT_PAYLOAD__) mountPayload(window.__AI2_BOOT_PAYLOAD__);
+  try { parent.postMessage({ type: 'ai2-preview-ready' }, '*'); } catch(e){}
 })();`
 }
 

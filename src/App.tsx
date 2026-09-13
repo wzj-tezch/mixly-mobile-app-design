@@ -9,6 +9,8 @@ import { EffectDemoModal } from '@/app/EffectDemoModal'
 import { AiChatPanel } from '@/app/AiChatPanel'
 import { persistLocalKnowledge } from '@/ai/knowledgeBase'
 import { HELP_OPEN_EVENT } from '@/app/shortcuts'
+import { inspectProject, readEmbedFlags } from '@/app/embedMode'
+import type { AiProject } from '@/project/types'
 
 export default function App() {
   const init = useProjectStore((s) => s.init)
@@ -28,6 +30,8 @@ export default function App() {
   const [apkDone, setApkDone] = useState<{ filename: string } | null>(null)
   const [demoOpen, setDemoOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [previewOpened, setPreviewOpened] = useState(false)
+  const embed = useRef(readEmbedFlags())
   const [leftW, setLeftW] = useState<number | null>(() => {
     try {
       const n = Number(localStorage.getItem('ai2-left-w'))
@@ -46,6 +50,66 @@ export default function App() {
   useEffect(() => {
     void init()
   }, [init])
+
+  useEffect(() => {
+    if (embed.current.embed) document.body.classList.add('embed-mode')
+    else document.body.classList.remove('embed-mode')
+    try {
+      window.parent.postMessage({ type: 'go3-ready' }, '*')
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    if (designerStage === 'preview') {
+      setPreviewOpened(true)
+      try {
+        window.parent.postMessage({ type: 'go3-preview-opened' }, '*')
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [designerStage])
+
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const data = e.data
+      if (!data || typeof data !== 'object') return
+      const store = useProjectStore.getState()
+      if (data.type === 'go3-inspect') {
+        try {
+          window.parent.postMessage(inspectProject(store.project, previewOpened || store.designerStage === 'preview'), '*')
+        } catch {
+          /* ignore */
+        }
+        return
+      }
+      if (data.type === 'go3-export') {
+        try {
+          window.parent.postMessage({ type: 'go3-export-result', project: store.project }, '*')
+        } catch {
+          /* ignore */
+        }
+        return
+      }
+      if (data.type === 'go3-reset') {
+        void store.resetLesson()
+        return
+      }
+      if (data.type === 'go3-load') {
+        if (typeof data.project === 'string' && data.project.trim()) {
+          void store.loadStarter(data.project.trim())
+          return
+        }
+        if (data.json && typeof data.json === 'object') {
+          store.replaceProject(data.json as AiProject)
+        }
+      }
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [previewOpened])
 
   useEffect(() => {
     persistLocalKnowledge()
@@ -143,7 +207,7 @@ export default function App() {
           : '代码'
 
   return (
-    <div className="ide">
+    <div className={`ide${embed.current.embed ? ' embed-ide' : ''}`}>
       <MixlyTopNav
         apkBusy={apkBusy}
         onApkStart={() => {
@@ -249,7 +313,7 @@ export default function App() {
         </div>
       </div>
 
-      <UsageHelpDock />
+      {!embed.current.embed && <UsageHelpDock />}
       <div className="ai-dock" hidden={!aiOpen} aria-hidden={!aiOpen}>
         <AiChatPanel open={aiOpen} onClose={() => setAiOpen(false)} />
       </div>

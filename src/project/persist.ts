@@ -46,8 +46,24 @@ export async function listProjectSummaries() {
   const db = await getDb()
   const all = await db.getAll('projects')
   return all
-    .map((p) => ({ id: p.id, name: p.name, updatedAt: p.updatedAt }))
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      updatedAt: p.updatedAt,
+      starterLabel: p.starterLabel,
+      sourceTemplate: p.sourceTemplate,
+    }))
     .sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+export function clearLocalAppData() {
+  const prefixes = ['tinydb:', 'notes:', 'webdb:']
+  const keys: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)
+    if (k && prefixes.some((p) => k.startsWith(p))) keys.push(k)
+  }
+  keys.forEach((k) => localStorage.removeItem(k))
 }
 
 export async function tinydbStore(ns: string, tag: string, value: unknown) {

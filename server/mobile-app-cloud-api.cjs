@@ -10,6 +10,7 @@ const { spawn, execSync } = require('child_process')
 
 const COOKIE = 'ai2_session'
 const SESSION_MS = 30 * 24 * 60 * 60 * 1000
+const SHARE_MS = 30 * 24 * 60 * 60 * 1000
 const SHARE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789'
 const USERNAME_RE = /^[\u4e00-\u9fffA-Za-z0-9_]{2,20}$/
 
@@ -201,7 +202,8 @@ function listUserProjects(userId) {
     .map((n) => {
       const p = readJson(path.join(dir, n), null)
       if (!p || !p.id) return null
-      return { id: p.id, name: p.name || '未命名', updatedAt: p.updatedAt || 0, shareId: p.shareId || undefined }
+      const live = syncProjectShare(userId, p)
+      return { id: live.id, name: live.name || '未命名', updatedAt: live.updatedAt || 0, shareId: live.shareId || undefined }
     })
     .filter(Boolean)
     .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -215,6 +217,59 @@ function findShareMeta(shareId) {
   const metaFile = path.join(shareDir(shareId), 'meta.json')
   if (!fs.existsSync(metaFile)) return null
   return readJson(metaFile, null)
+}
+
+function shareExpiresAt(updatedAt) {
+  return Number(updatedAt || 0) + SHARE_MS
+}
+
+function isShareExpired(meta) {
+  if (!meta) return true
+  return Date.now() > shareExpiresAt(meta.updatedAt)
+}
+
+function removeShareDir(shareId) {
+  try {
+    fs.rmSync(shareDir(shareId), { recursive: true, force: true })
+  } catch {
+    /* ignore */
+  }
+}
+
+/** 过期或不存在则删目录，返回是否已不存在 */
+function purgeExpiredShare(shareId) {
+  if (!shareId) return true
+  let dir
+  try {
+    dir = shareDir(shareId)
+  } catch {
+    return true
+  }
+  if (!fs.existsSync(dir)) return true
+  if (!isShareExpired(findShareMeta(shareId))) return false
+  removeShareDir(shareId)
+  return true
+}
+
+function purgeExpiredShares() {
+  const root = dataPaths().shares
+  if (!fs.existsSync(root)) return
+  for (const name of fs.readdirSync(root)) {
+    try {
+      purgeExpiredShare(name)
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function syncProjectShare(userId, project) {
+  if (!project || !project.shareId) return project
+  if (!purgeExpiredShare(project.shareId)) return project
+  const next = { ...project }
+  delete next.shareId
+  writeUserProject(userId, next)
+  return next
 }
 
 async function readBody(req) {
@@ -334,7 +389,7 @@ function handleGetProject(req, res, projectId) {
     sendJson(res, 404, { error: '云端没有这个工程' })
     return
   }
-  sendJson(res, 200, { project: p })
+  sendJson(res, 200, { project: syncProjectShare(user.id, p) })
 }
 
 async function handlePutProject(req, res) {
@@ -347,11 +402,12 @@ async function handlePutProject(req, res) {
     return
   }
   const existing = readUserProject(user.id, project.id)
+  const wantedShare = project.shareId || (existing && existing.shareId) || ''
   const next = {
     ...project,
     name: String(project.name || '未命名').slice(0, 80),
     updatedAt: Date.now(),
-    shareId: project.shareId || (existing && existing.shareId) || undefined,
+    shareId: purgeExpiredShare(wantedShare) ? undefined : wantedShare,
   }
   writeUserProject(user.id, next)
   sendJson(res, 200, {
@@ -370,13 +426,7 @@ function handleDeleteProject(req, res, projectId) {
   }
   const existing = readUserProject(user.id, projectId)
   fs.unlinkSync(file)
-  if (existing && existing.shareId) {
-    try {
-      fs.rmSync(shareDir(existing.shareId), { recursive: true, force: true })
-    } catch {
-      /* ignore */
-    }
-  }
+  if (existing && existing.shareId) removeShareDir(existing.shareId)
   sendJson(res, 200, { ok: true })
 }
 
@@ -645,7 +695,7 @@ async function ensurePublicOrigin(req) {
   return startTunnel(`http://127.0.0.1:${port}`)
 }
 
-function buildShareLinks(req, shareId, tunnel) {
+function buildShareLinks(req, shareId, tunnel, updatedAt) {
   const sharePath = `/s/${shareId}/`
   const port = localListenPort(req)
   const publicOrigin = (tunnel && tunnel.origin) || originFromForwarded(req) || ''
@@ -656,6 +706,7 @@ function buildShareLinks(req, shareId, tunnel) {
     lanUrls: lanOrigins(port).map((o) => `${o}${sharePath}`),
     localUrl: `http://127.0.0.1:${port}${sharePath}`,
     tunnelError: publicOrigin ? '' : (tunnel && tunnel.error) || '',
+    expiresAt: shareExpiresAt(updatedAt),
   }
 }
 
@@ -692,31 +743,33 @@ async function handlePublish(req, res) {
     sendJson(res, 404, { error: '请先云保存，再发布' })
     return
   }
+  purgeExpiredShares()
   let shareId = project.shareId
   if (shareId) {
     const meta = findShareMeta(shareId)
-    if (meta && meta.userId && meta.userId !== user.id) shareId = ''
+    if (purgeExpiredShare(shareId) || (meta && meta.userId && meta.userId !== user.id)) shareId = ''
   }
   if (!shareId) {
     do {
       shareId = newShareId()
-    } while (fs.existsSync(shareDir(shareId)))
+    } while (fs.existsSync(shareDir(shareId)) && !purgeExpiredShare(shareId))
   }
   const dir = shareDir(shareId)
   ensureDir(dir)
   fs.writeFileSync(path.join(dir, 'index.html'), html, 'utf8')
+  const updatedAt = Date.now()
   const meta = {
     shareId,
     projectId,
     userId: user.id,
     name: project.name || body.name || '未命名',
-    updatedAt: Date.now(),
+    updatedAt,
   }
   atomicWrite(path.join(dir, 'meta.json'), JSON.stringify(meta, null, 2))
-  project = { ...project, shareId, updatedAt: Date.now() }
+  project = { ...project, shareId, updatedAt }
   writeUserProject(user.id, project)
   const tunnel = await ensurePublicOrigin(req)
-  sendJson(res, 200, buildShareLinks(req, shareId, tunnel))
+  sendJson(res, 200, buildShareLinks(req, shareId, tunnel, updatedAt))
 }
 
 async function handleUnpublish(req, res) {
@@ -730,11 +783,7 @@ async function handleUnpublish(req, res) {
     return
   }
   if (project.shareId) {
-    try {
-      fs.rmSync(shareDir(project.shareId), { recursive: true, force: true })
-    } catch {
-      /* ignore */
-    }
+    removeShareDir(project.shareId)
     delete project.shareId
     project.updatedAt = Date.now()
     writeUserProject(user.id, project)
@@ -748,6 +797,10 @@ function handleSharePage(req, res, shareId) {
     dir = shareDir(shareId)
   } catch {
     sendText(res, 404, '链接无效')
+    return
+  }
+  if (purgeExpiredShare(shareId)) {
+    sendText(res, 404, '链接无效或已取消发布')
     return
   }
   const file = path.join(dir, 'index.html')
@@ -869,6 +922,40 @@ async function handleRaw(req, res) {
     await handleUnpublish(req, res)
     return true
   }
+  if (url === '/api/lesson-backup') {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    if (method === 'OPTIONS') {
+      res.statusCode = 204
+      res.end()
+      return true
+    }
+    global.__AI2_LESSON_BACKUP__ = global.__AI2_LESSON_BACKUP__ || new Map()
+    const store = global.__AI2_LESSON_BACKUP__
+    if (method === 'GET') {
+      const raw = String(req.url || '')
+      const q = raw.includes('?') ? new URLSearchParams(raw.slice(raw.indexOf('?') + 1)) : new URLSearchParams()
+      const tag = q.get('tag') || 'lesson-backup'
+      const value = store.has(tag) ? store.get(tag) : ''
+      sendJson(res, 200, { tag, value })
+      return true
+    }
+    if (method === 'POST') {
+      let body = {}
+      try {
+        body = await readBody(req)
+      } catch {
+        body = {}
+      }
+      const tag = String(body.tag || 'lesson-backup')
+      const value = body.value != null ? body.value : body
+      store.set(tag, value)
+      sendJson(res, 200, { ok: true, tag, value })
+      return true
+    }
+  }
+
   if (url === '/api/ai-chat' && method === 'GET') {
     sendJson(res, 200, { ok: true, proxy: true })
     return true

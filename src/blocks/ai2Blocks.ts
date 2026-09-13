@@ -70,6 +70,7 @@ export function registerAi2Blocks() {
             ['页面加载完成', 'PageLoaded'],
             ['取得语音文本后', 'AfterGettingText'],
             ['取得网页内容', 'GotText'],
+            ['请求失败', 'ErrorOccurred'],
             ['掷出结果', 'Rolled'],
             ['计时跳动', 'Tick'],
             ['倒计时结束', 'Finished'],
@@ -117,6 +118,7 @@ export function registerAi2Blocks() {
             ['文本', 'Text'],
             ['背景色', 'BackgroundColor'],
             ['文字色', 'TextColor'],
+            ['字号', 'FontSize'],
             ['启用', 'Enabled'],
             ['勾选', 'Checked'],
             ['开关', 'On'],
@@ -155,6 +157,7 @@ export function registerAi2Blocks() {
             ['上次随机结果', 'LastResult'],
             ['笔记标题', 'Title'],
             ['笔记内容', 'Content'],
+            ['笔记时间', 'UpdatedAt'],
             ['标题列表', 'Titles'],
             ['数量', 'Count'],
             ['文件名', 'FileName'],
@@ -216,6 +219,7 @@ export function registerAi2Blocks() {
           new Blockly.FieldDropdown([
             ['文本', 'Text'],
             ['背景色', 'BackgroundColor'],
+            ['字号', 'FontSize'],
             ['启用', 'Enabled'],
             ['勾选', 'Checked'],
             ['开关', 'On'],
@@ -259,6 +263,8 @@ export function registerAi2Blocks() {
             ['评分', 'Rating'],
             ['识别结果', 'Result'],
             ['网页内容', 'ResponseContent'],
+            ['状态码', 'ResponseCode'],
+            ['错误信息', 'ErrorMessage'],
             ['网址', 'Url'],
             ['电话号码', 'PhoneNumber'],
             ['颜色', 'Color'],
@@ -275,6 +281,7 @@ export function registerAi2Blocks() {
             ['上次随机结果', 'LastResult'],
             ['笔记标题', 'Title'],
             ['笔记内容', 'Content'],
+            ['笔记时间', 'UpdatedAt'],
             ['标题列表', 'Titles'],
             ['数量', 'Count'],
             ['文件名', 'FileName'],
@@ -443,22 +450,24 @@ export function registerAi2Blocks() {
 
   Blockly.Blocks['tinydb_store'] = {
     init(this: Blockly.Block) {
-      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.存储值')
-      this.appendValueInput('TAG').appendField('标签')
+      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.存')
+      this.appendValueInput('TAG').appendField('键')
       this.appendValueInput('VALUE').appendField('值')
       this.setPreviousStatement(true)
       this.setNextStatement(true)
       this.setColour(145)
+      this.setTooltip('按键名写入本机。课上可把键名叫做 API。刷新后还在。')
     },
   }
 
   Blockly.Blocks['tinydb_get'] = {
     init(this: Blockly.Block) {
-      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.读取值')
-      this.appendValueInput('TAG').appendField('标签')
+      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.取')
+      this.appendValueInput('TAG').appendField('键')
       this.appendValueInput('DEFAULT').appendField('默认值')
       this.setOutput(true)
       this.setColour(145)
+      this.setTooltip('按键名读取本机值')
     },
   }
 
@@ -466,16 +475,17 @@ export function registerAi2Blocks() {
     init(this: Blockly.Block) {
       this.appendValueInput('TAG')
         .appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT')
-        .appendField('.清除标签')
+        .appendField('.删')
       this.setPreviousStatement(true)
       this.setNextStatement(true)
       this.setColour(145)
+      this.setTooltip('按键名删除一条本机记录')
     },
   }
 
   Blockly.Blocks['tinydb_clear_all'] = {
     init(this: Blockly.Block) {
-      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.清除全部')
+      this.appendDummyInput().appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT').appendField('.清空本库')
       this.setPreviousStatement(true)
       this.setNextStatement(true)
       this.setColour(145)
@@ -627,7 +637,28 @@ export function registerAi2Blocks() {
       this.setPreviousStatement(true)
       this.setNextStatement(true)
       this.setColour(145)
-      this.setTooltip('异步请求，结果在「取得网页内容」事件中用「获取.网页内容」读取')
+      this.setTooltip('GET。成功走「取得网页内容」，超时/空数据/失败走「请求失败」')
+    },
+  }
+  Blockly.Blocks['web_post'] = {
+    init(this: Blockly.Block) {
+      this.appendValueInput('URL')
+        .appendField(new Blockly.FieldDropdown(componentMenu), 'COMPONENT')
+        .appendField('.发送网页')
+      this.appendValueInput('BODY').appendField('正文')
+      this.setPreviousStatement(true)
+      this.setNextStatement(true)
+      this.setColour(145)
+      this.setTooltip('POST 文本或 JSON。教学备份可用 lesson://backup')
+    },
+  }
+  Blockly.Blocks['app_clear_local'] = {
+    init(this: Blockly.Block) {
+      this.appendDummyInput().appendField('清空本地数据')
+      this.setPreviousStatement(true)
+      this.setNextStatement(true)
+      this.setColour(145)
+      this.setTooltip('清掉本 App 的 TinyDB / 笔记 / 教学备份。第17课退出登录用。')
     },
   }
   Blockly.Blocks['dice_roll'] = {
@@ -1364,6 +1395,15 @@ export function registerAi2Blocks() {
     const url = javascriptGenerator.valueToCode(block, 'URL', Order.NONE) || "''"
     return `rt.webGet('${comp}', ${url});\n`
   }
+  javascriptGenerator.forBlock['web_post'] = function (block) {
+    const comp = block.getFieldValue('COMPONENT')
+    const url = javascriptGenerator.valueToCode(block, 'URL', Order.NONE) || "''"
+    const body = javascriptGenerator.valueToCode(block, 'BODY', Order.NONE) || "''"
+    return `rt.webPost('${comp}', ${url}, ${body});\n`
+  }
+  javascriptGenerator.forBlock['app_clear_local'] = function () {
+    return `rt.clearLocalData();\n`
+  }
   javascriptGenerator.forBlock['dice_roll'] = function (block) {
     return `rt.diceRoll('${block.getFieldValue('COMPONENT')}');\n`
   }
@@ -1904,9 +1944,11 @@ export function buildToolbox() {
           { kind: 'block', type: 'tinydb_get' },
           { kind: 'block', type: 'tinydb_clear_tag' },
           { kind: 'block', type: 'tinydb_clear_all' },
+          { kind: 'block', type: 'app_clear_local' },
           { kind: 'block', type: 'webdb_store' },
           { kind: 'block', type: 'webdb_get' },
           { kind: 'block', type: 'web_get' },
+          { kind: 'block', type: 'web_post' },
         ],
       },
       {

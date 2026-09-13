@@ -20,6 +20,7 @@ import {
 import { AuthModal } from '@/app/AuthModal'
 import { PublishDialog } from '@/app/PublishDialog'
 import { ENABLE_APK, ENABLE_CLOUD, ENABLE_SHARE, SHOW_MIXLY_HOME } from '@/app/features'
+import { readEmbedFlags } from '@/app/embedMode'
 import { buildStandaloneDocument } from '@/runtime/previewDoc'
 import { buildProjectScreenCodes } from '@/blocks/codegen'
 import { confirmSetAdvancedMode } from '@/runtime/scriptSandbox'
@@ -61,6 +62,9 @@ export function MixlyTopNav({
   const setEditorTab = useProjectStore((s) => s.setEditorTab)
   const setBlocksViewMode = useProjectStore((s) => s.setBlocksViewMode)
   const persist = useProjectStore((s) => s.persist)
+  const resetLesson = useProjectStore((s) => s.resetLesson)
+  const saveStudentCopy = useProjectStore((s) => s.saveStudentCopy)
+  const embed = readEmbedFlags().embed
   const saveToCloud = useProjectStore((s) => s.saveToCloud)
   const setShareId = useProjectStore((s) => s.setShareId)
   const refreshCloudList = useProjectStore((s) => s.refreshCloudList)
@@ -380,7 +384,7 @@ export function MixlyTopNav({
   return (
     <header className="mixly-nav" ref={barRef}>
       <div className="mixly-nav-left">
-        {SHOW_MIXLY_HOME ? (
+        {SHOW_MIXLY_HOME && !embed ? (
           <a className="mixly-nav-item mixly-home" href={homeHref} title="返回 Mixly 主页">
             {mixlyBrand}
           </a>
@@ -420,7 +424,7 @@ export function MixlyTopNav({
           <MixlyIcon name="doc" />
           <span className="mixly-nav-text">导出ZIP</span>
         </button>
-        {ENABLE_APK && (
+        {ENABLE_APK && !embed && (
           <button type="button" className="mixly-nav-item" disabled={apkBusy} onClick={runExportApk} title="导出 APK (Ctrl+Shift+E)">
             <MixlyIcon name="upload" />
             <span className="mixly-nav-text">{apkBusy ? '打包中…' : '导出APK'}</span>
@@ -448,10 +452,33 @@ export function MixlyTopNav({
       </div>
 
       <div className="mixly-nav-right">
+        {!embed && (
         <button type="button" className="mixly-nav-item" onClick={onOpenDemo} title="效果演示 (Shift+Space)">
           <MixlyIcon name="play" />
           <span className="mixly-nav-text">效果演示</span>
         </button>
+        )}
+        {(embed || project.starterSnapshot || project.starterLabel) && (
+          <>
+            <button
+              type="button"
+              className="mixly-nav-item"
+              disabled={!project.starterSnapshot && !project.sourceTemplate && !project.starterLabel}
+              title="重置回载入时的初始工程"
+              onClick={() => void resetLesson()}
+            >
+              <span className="mixly-nav-text">重置</span>
+            </button>
+            <button
+              type="button"
+              className="mixly-nav-item"
+              title="另存为学生副本，不覆盖课模板"
+              onClick={() => void saveStudentCopy()}
+            >
+              <span className="mixly-nav-text">另存副本</span>
+            </button>
+          </>
+        )}
         <select
           className="mixly-nav-select"
           value={project.activeScreenId}
@@ -618,6 +645,7 @@ export function MixlyTopNav({
           )}
         </div>
 
+        {!embed && (
         <button
           type="button"
           className={`mixly-nav-item${aiOpen ? ' open' : ''}`}
@@ -630,8 +658,9 @@ export function MixlyTopNav({
           <MixlyIcon name="comment" />
           <span className="mixly-nav-text">AI</span>
         </button>
+        )}
 
-        {ENABLE_CLOUD &&
+        {!embed && ENABLE_CLOUD &&
           (user ? (
             <>
               <span className="mixly-nav-user" title={user.username}>

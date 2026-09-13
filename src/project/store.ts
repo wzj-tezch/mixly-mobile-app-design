@@ -21,6 +21,7 @@ import {
   type CloudSummary,
 } from '@/auth/cloudClient'
 import { createTemplate, refreshCaseProjectIfStale, type TemplateKind } from './templates'
+import { readEmbedFlags, resolveStarterProject, snapshotOf, withStarterSnapshot } from '@/app/embedMode'
 import { renameInBlocksXml } from './renameSync'
 import { namePrefix, projectHasGeneratedNames, sanitizeReadableNames, uniqueReadableName } from './componentNames'
 
@@ -198,7 +199,7 @@ interface ProjectState {
   designerStage: 'design' | 'preview'
   leftPanel: LeftPanel
   blocksViewMode: BlocksViewMode
-  projectList: { id: string; name: string; updatedAt: number }[]
+  projectList: { id: string; name: string; updatedAt: number; starterLabel?: string; sourceTemplate?: string }[]
   cloudList: CloudSummary[]
   previewKey: number
   /** Bumped when rename rewrites blocksXml so open Blockly workspace can reload. */
@@ -243,6 +244,9 @@ interface ProjectState {
   openProject: (id: string) => Promise<void>
   removeProject: (id: string) => Promise<void>
   loadTemplate: (kind: TemplateKind, options?: { withBlocks?: boolean }) => Promise<void>
+  loadStarter: (id: string) => Promise<void>
+  resetLesson: () => Promise<void>
+  saveStudentCopy: () => Promise<void>
   bumpPreview: () => void
   replaceProject: (p: AiProject) => void
   setWorkspaceHistory: (h: {
@@ -298,7 +302,34 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   clipboard: null,
 
   init: async () => {
+    const flags = readEmbedFlags()
     const list = await listProjectSummaries()
+    if (flags.project) {
+      const existing = list.find((p) => p.starterLabel === flags.project || p.sourceTemplate === flags.project)
+      if (existing) {
+        const p = await loadProject(existing.id)
+        if (p) {
+          clearHistory()
+          set({ project: normalizeProject(p), projectList: list, selectedId: null })
+          return
+        }
+      }
+      const starter = resolveStarterProject(flags.project)
+      if (starter) {
+        const working = normalizeProject(
+          withStarterSnapshot({
+            ...starter,
+            id: uid('proj'),
+            starterLabel: flags.project,
+            updatedAt: Date.now(),
+          }),
+        )
+        await saveProject(working)
+        clearHistory()
+        set({ project: working, projectList: await listProjectSummaries(), selectedId: null })
+        return
+      }
+    }
     if (list.length) {
       const last = list.sort((a, b) => b.updatedAt - a.updatedAt)[0]
       const p = await loadProject(last.id)
@@ -693,11 +724,106 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     })
   },
 
-  bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
-  replaceProject: (p) => {
+  loadStarter: async (id) => {
+    const starter = resolveStarterProject(id)
+    if (!starter) return
+    const p = normalizeProject(
+      withStarterSnapshot({
+        ...starter,
+        id: uid('proj'),
+        starterLabel: id,
+        updatedAt: Date.now(),
+      }),
+    )
+    await saveProject(p)
     clearHistory()
     set({
-      project: normalizeProject(p),
+      project: p,
+      selectedId: null,
+      projectList: await listProjectSummaries(),
+      previewKey: get().previewKey + 1,
+      editorTab: 'designer',
+      blocksSyncKey: get().blocksSyncKey + 1,
+    })
+  },
+
+  resetLesson: async () => {
+    const keep = get().project
+    const snap = keep.starterSnapshot
+    if (snap) {
+      const p = normalizeProject(
+        withStarterSnapshot(
+          {
+            ...structuredClone(snap),
+            id: keep.id,
+            name: keep.name,
+            starterLabel: keep.starterLabel,
+            updatedAt: Date.now(),
+          },
+          snap,
+        ),
+      )
+      await saveProject(p)
+      clearHistory()
+      set({
+        project: p,
+        selectedId: null,
+        previewKey: get().previewKey + 1,
+        blocksSyncKey: get().blocksSyncKey + 1,
+      })
+      return
+    }
+    const kind = keep.sourceTemplate || keep.starterLabel
+    if (!kind) return
+    const starter = resolveStarterProject(kind)
+    if (!starter) return
+    const p = normalizeProject(
+      withStarterSnapshot({
+        ...starter,
+        id: keep.id,
+        name: keep.name,
+        starterLabel: keep.starterLabel,
+        updatedAt: Date.now(),
+      }),
+    )
+    await saveProject(p)
+    clearHistory()
+    set({
+      project: p,
+      selectedId: null,
+      previewKey: get().previewKey + 1,
+      blocksSyncKey: get().blocksSyncKey + 1,
+    })
+  },
+
+  saveStudentCopy: async () => {
+    const cur = get().project
+    const p = normalizeProject({
+      ...structuredClone(cur),
+      id: uid('proj'),
+      name: cur.name.includes('（学生）') ? cur.name : `${cur.name}（学生）`,
+      starterLabel: cur.starterLabel,
+      starterSnapshot: cur.starterSnapshot ?? snapshotOf(cur),
+      updatedAt: Date.now(),
+    })
+    await saveProject(p)
+    clearHistory()
+    set({
+      project: p,
+      selectedId: null,
+      projectList: await listProjectSummaries(),
+      previewKey: get().previewKey + 1,
+      blocksSyncKey: get().blocksSyncKey + 1,
+    })
+  },
+
+  bumpPreview: () => set((s) => ({ previewKey: s.previewKey + 1 })),
+  replaceProject: (p) => {
+    const incoming = normalizeProject(p)
+    const next = incoming.starterSnapshot ? incoming : withStarterSnapshot(incoming)
+    clearHistory()
+    set({
+      project: next,
       selectedId: null,
       previewKey: get().previewKey + 1,
       blocksSyncKey: get().blocksSyncKey + 1,

@@ -378,16 +378,16 @@ const DOCS: Partial<Record<ComponentType, ComponentHelpDoc>> = {
   TinyDB: {
     summary: '本地数据库：把键值对存在本机（刷新后仍在，按命名空间区分）。',
     howTo: [
-      '积木：存储值 / 读取值 / 清除标签 / 清除全部。',
-      '标签像「钥匙」，值可以是文字或数字。',
+      '积木：存(键,值) / 取(键) / 删(键) / 清空本库。课上把键名叫做 API。',
+      '刷新、关掉预览后记录还在。第17课用「清空本地数据」退出清理。',
     ],
     example: {
       title: '记住昵称',
       steps: [
-        '保存：TinyDB1.存储值 标签「昵称」值=文本框内容。',
-        '打开屏幕时：设置标签文本 为 TinyDB1.读取值「昵称」默认「同学」。',
+        '保存：TinyDB1.存 键「昵称」值=文本框内容。',
+        '打开屏幕时：设置标签文本 为 TinyDB1.取「昵称」默认「同学」。',
       ],
-      blocksHint: '存储 → 存储值 / 读取值',
+      blocksHint: '存储 → 存 / 取',
     },
   },
   TinyWebDB: {
@@ -401,18 +401,19 @@ const DOCS: Partial<Record<ComponentType, ComponentHelpDoc>> = {
     },
   },
   Web: {
-    summary: '网页请求：用 GET 拉取网页或接口文本。',
+    summary: '网页请求：GET/POST 文本或 JSON；超时、空数据、错误走「请求失败」。',
     howTo: [
-      '积木「获取网页」填 URL。',
-      '「取得网页内容」后「获取.网页内容」。',
+      '积木「获取网页 / 发送网页」。教学备份可用 lesson://backup（断网也能练）。',
+      '成功：「取得网页内容」读「网页内容」。失败：「请求失败」读「错误信息」。',
     ],
     example: {
-      title: '拉取公开文本',
+      title: '备份一句笔记',
       steps: [
-        '注意跨域：很多接口在浏览器会被 CORS 拦住，课堂可用老师提供的允许跨域地址。',
+        'POST 到 lesson://backup，再 GET 取回。',
+        '模拟器里把网络演练改成超时/空数据，看错误提示。',
       ],
     },
-    tips: ['失败时也会触发事件，内容可能为空。'],
+    tips: ['真网上很多接口会被 CORS 拦住；机房第15课优先教学备份。'],
   },
   Sharing: {
     summary: '分享：调用系统分享；不支持时复制到剪贴板。',
@@ -765,7 +766,7 @@ const DOCS: Partial<Record<ComponentType, ComponentHelpDoc>> = {
     howTo: [
       '添加「笔记库」，可设笔记本名称（Namespace）。',
       '积木：保存笔记 / 打开笔记 / 删除 / 列出 / 清空。',
-      '保存、加载后用「获取.笔记内容」「获取.标题列表」。',
+      '保存、加载后用「获取.笔记内容」「获取.笔记时间」「获取.标题列表」。',
     ],
     example: {
       title: '简易记事本',

@@ -870,7 +870,7 @@ export function createNotepadTemplate(): AiProject {
             },
           ]),
         ]),
-        label('Tip', '写标题与正文 → 保存；点下方列表可重新打开。', 13, '#5a7d78'),
+        label('Tip', '写标题与正文 → 保存；列表会带上时间。关掉预览再刷新，记录还在。', 13, '#5a7d78'),
       ]),
       nonVisible: [nv('NotePad', 'NotePad1', { Namespace: 'classroom_notes' })],
       blocksXml: blocks,
